@@ -1,0 +1,80 @@
+/*
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/ClientSide/css.css to edit this template
+*/
+/* 
+    Created on : 20 feb 2025, 15:22:56
+    Author     : Salvatore
+*/
+
+.nav-button {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.sv-progressbar-percentage {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    padding: 16px;
+    line-height: 32px;
+}
+
+.sv-progressbar-percentage__title {
+    font-size: 20px;
+    display: flex;
+}
+
+.sv-progressbar-percentage__indicator {
+    position: relative;
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    height: 32px;
+    border: 1px solid #0066CC;
+}
+
+.sv-progressbar-percentage__value-bar {
+    position: absolute;
+    background-color: #0066CC;
+    left: 0;
+    top: 0;
+    height: 100%;
+}
+
+.sv-progressbar-percentage__value {
+    font-size: 20px;
+    display: flex;
+    color: #0066CC;
+}
+
+.sv_progress-toc .sv-list__item.sv-list__item--selected .sv-list__item-body{
+    background-color: #0066CC;
+    color:white;
+}
+
+.custom-button{
+    background-color: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+
+}
+.custom-button:hover{
+    color:#fff;
+    background-color:#0b5ed7;
+    border-color: #0a58ca;
+}
+.custom-button:focus{
+    box-shadow: 0 0 0 0.25rem rgba(49,132,253,0.5);
+}
+.custom-button:active{
+    color:#fff;
+    background-color :#0a58ca;
+    border-color:#0a53be;
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+.custom-button:disabled{
+    color:#fff;
+    background-color:#0d6efd;
+    border-color: #0d6efd;
+}
