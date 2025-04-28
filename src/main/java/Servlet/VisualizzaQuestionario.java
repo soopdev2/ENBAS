@@ -174,24 +174,30 @@ public class VisualizzaQuestionario extends HttpServlet {
                 }
 
                 if (!corretta) {
+                    List<String> risposteUtentePulite = cleanHtmlFromList(risposteUtente);
+                    List<String> risposteGiustePulite = cleanHtmlFromList(risposteGiuste);
+
                     table.addCell(new PdfPCell(new Phrase("Risposta data:")));
-                    table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteUtente), fontBoldRed)));
+                    table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteUtentePulite), fontBoldRed)));
 
                     table.addCell(new PdfPCell(new Phrase("Risposta corretta:")));
-                    table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteGiuste), fontBoldGreen)));
+                    table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteGiustePulite), fontBoldGreen)));
                 } else {
-                    if (risposteGiuste.size() > 1) {
-                        table.addCell(new PdfPCell(new Phrase("Risposte date (corrette):")));
-                        table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteUtente), fontBoldGreen)));
+                    List<String> risposteUtentePulite = cleanHtmlFromList(risposteUtente);
+                    List<String> risposteGiustePulite = cleanHtmlFromList(risposteGiuste);
 
-                        table.addCell(new PdfPCell(new Phrase("Risposte corrette attese:")));
-                        table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteGiuste), fontBoldGreen)));
+                    if (risposteGiustePulite.size() > 1) {
+                        table.addCell(new PdfPCell(new Phrase("Risposte date (corrette):")));
+                        table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteUtentePulite), fontBoldGreen)));
+
+                        table.addCell(new PdfPCell(new Phrase("Risposte corrette :")));
+                        table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteGiustePulite), fontBoldGreen)));
                     } else {
                         table.addCell(new PdfPCell(new Phrase("Risposta corretta:")));
-                        table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteGiuste), fontBoldGreen)));
+                        table.addCell(new PdfPCell(new Phrase(String.join(", ", risposteGiustePulite), fontBoldGreen)));
                     }
-                }
 
+                }
                 document.add(table);
             }
 
@@ -264,6 +270,14 @@ public class VisualizzaQuestionario extends HttpServlet {
             }
         }
         return null;
+    }
+
+    private static List<String> cleanHtmlFromList(List<String> lista) {
+        List<String> pulita = new ArrayList<>();
+        for (String s : lista) {
+            pulita.add(s.replaceAll("<[^>]*>", "").trim());
+        }
+        return pulita;
     }
 
     /**

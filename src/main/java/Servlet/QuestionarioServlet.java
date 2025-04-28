@@ -16,6 +16,7 @@ import Enum.Tipo_inserimento;
 import Enum.Visibilità_domanda;
 import Utils.JPAUtil;
 import Utils.Utils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -573,7 +574,8 @@ public class QuestionarioServlet extends HttpServlet {
 
                             List<String> idRisposteUtente = new ArrayList<>();
                             for (String testoRisposta : risposteUtente) {
-                                String idRisposta = testoToIdMap.get(testoRisposta.trim());
+                                String testoPulito = testoRisposta.replaceAll("<[^>]*>", "").trim();
+                                String idRisposta = testoToIdMap.get(testoPulito);
                                 if (idRisposta != null) {
                                     idRisposteUtente.add(idRisposta);
                                 }
@@ -595,7 +597,7 @@ public class QuestionarioServlet extends HttpServlet {
                             risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
                         }
 
-                    } catch (Exception e) {
+                    } catch (JsonProcessingException e) {
                         logger.error("Errore parsing json DOMANDA_AUTOMATICA id " + domanda.getId(), e);
                     }
 

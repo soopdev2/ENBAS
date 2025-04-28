@@ -417,21 +417,20 @@
                                         rispostaData.put("risposteGiuste", risposteGiuste);
                                         risposteList.add(rispostaData);
                                     }
+
+                                    
                                 %>
 
-
-
                                 <br>
-                                <div class="container-fluid" style="display: flex; justify-content: center; white-space: nowrap" >
-                                    <div class="row" >
+
+                                <div class="container-fluid" style="display: flex; justify-content: center; white-space: nowrap">
+                                    <div class="row">
                                         <div class="col">
                                             <h6 class="text-primary">Totale domande: <%= risposteDate%></h6>
                                         </div>
-
                                         <div class="col">
-                                            <h6 class="text-success">Risposte corrette: <%= risposteCorrette%> ( <%= percentuale%>%)</h6>
+                                            <h6 class="text-success">Risposte corrette: <%= risposteCorrette%> (<%= percentuale%>%)</h6>
                                         </div>
-
                                         <div class="col">
                                             <h6 class="text-danger">Risposte errate: <%= risposteErrate%></h6>
                                         </div>
@@ -455,34 +454,42 @@
                                                 boolean corretta = (Boolean) rispostaData.get("corretta");
                                                 List<String> risposteUtente = (List<String>) rispostaData.get("risposteUtente");
                                                 List<String> risposteGiuste = (List<String>) rispostaData.get("risposteGiuste");
+
+                                            
+                                                List<String> risposteUtentePulite = new ArrayList<>();
+                                                for (String r : risposteUtente) {
+                                                    risposteUtentePulite.add(r.replaceAll("<[^>]*>", "").trim());
+                                                }
+
+                                                List<String> risposteGiustePulite = new ArrayList<>();
+                                                for (String r : risposteGiuste) {
+                                                    risposteGiustePulite.add(r.replaceAll("<[^>]*>", "").trim());
+                                                }
                                         %>
                                         <tr>
                                             <td><%= domanda%></td>
 
                                             <td class="<%= corretta ? "text-success" : "text-danger"%>" style="font-weight: bold;">
-                                                <%= String.join(", ", risposteUtente)%>
+                                                <%= String.join(", ", risposteUtentePulite)%>
                                             </td>
 
                                             <% if (!corretta) {%>
-                                            <td class="text-success" style="font-weight: bold; white-space: nowrap">
-                                                <%= String.join(", ", "❌ " + risposteGiuste)%>
+                                            <td class="text-success" style="font-weight: bold; white-space: nowrap;">
+                                                ❌ <%= String.join(", ", risposteGiustePulite)%>
                                             </td>
                                             <% } else { %>
-                                            <td class="text-success" style="font-weight: bold">✅</td>
+                                            <td class="text-success" style="font-weight: bold;">✅</td>
                                             <% } %>
                                         </tr>
                                         <% } %>
                                     </tbody>
                                 </table>
-
-
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
 
 
         <% } else if (utente_questionario
@@ -758,365 +765,6 @@
                     "showProgressBar": "top",
                     "title": "Questionario di tipo - " + "<%= livello%>",
                     "pages": [
-          <% int pageIndex = 0;
-                for (Domanda domanda : domande) {
-                    String titolo = domanda.getTitolo().trim();
-                    Tipo_domanda tipo_domanda = domanda.getTipo_domanda();
-                    StringBuilder pageJSON = new StringBuilder();
-                    pageJSON.append("{");
-                    pageJSON.append("\"title\": \"Domanda " + (pageIndex + 1) + "\",");
-
-                    pageJSON.append("\"questions\": [");
-                    StringBuilder questionJSON = new StringBuilder();
-                    questionJSON.append("{");
-                    questionJSON.append("\"title\": \"" + titolo + "\",");
-
-                    questionJSON.append("\"isRequired\": true,");
-
-                    if (domanda.getTipo_inserimento() != null && !domanda.getTipo_inserimento().equals(Tipo_inserimento.MANUALE)) {
-                        String jsonDomanda = domanda.getRisposte();
-                        JSONObject jsonObj = new JSONObject(jsonDomanda);
-
-                        String tipo = jsonObj.getString("tipo_domanda").toLowerCase();
-                        JSONArray risposteAutomatiche = jsonObj.getJSONArray("risposte");
-                        JSONArray risposteCorrette = jsonObj.optJSONArray("risposte_corrette");
-
-                        questionJSON.append("\"title\": \"" + titolo.trim() + "\",");
-                        questionJSON.append("\"isRequired\": true,");
-
-                        if (tipo.equals("domanda_scelta_multipla")) {
-                            if (risposteCorrette != null && risposteCorrette.length() > 1) {
-                                questionJSON.append("\"type\": \"checkbox\",");
-                            } else {
-                                questionJSON.append("\"type\": \"radiogroup\",");
-                            }
-
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"choices\": [");
-
-                            for (int i = 0; i < risposteAutomatiche.length(); i++) {
-                                JSONObject r = risposteAutomatiche.getJSONObject(i);
-                                String testo = r.getString("testo").replace("\"", "\\\"").replaceAll("<[^>]*>", "");
-                                questionJSON.append("\"" + testo + "\"");
-                                if (i != risposteAutomatiche.length() - 1) {
-                                    questionJSON.append(",");
-                                }
-                            }
-
-                            questionJSON.append("]");
-
-                        } else if (tipo.equals("domanda_scala_valutazione")) {
-                            questionJSON.append("\"type\": \"rating\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
-                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
-                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
-
-                        } else if (tipo.equals("domanda_select")) {
-                            questionJSON.append("\"type\": \"dropdown\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"choices\": [");
-
-                            for (int i = 0; i < risposteAutomatiche.length(); i++) {
-                                JSONObject r = risposteAutomatiche.getJSONObject(i);
-                                String testo = r.getString("testo").replace("\"", "\\\"").replaceAll("<[^>]*>", "");
-                                questionJSON.append("\"" + testo + "\"");
-                                if (i != risposteAutomatiche.length() - 1) {
-                                    questionJSON.append(",");
-                                }
-                            }
-
-                            questionJSON.append("]");
-
-                        } else {
-                            questionJSON.append("\"type\": \"text\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
-                        }
-
-                    } else {
-                        String opzioni = null;
-                        if (domanda.getOpzioni() != null) {
-                            opzioni = domanda.getOpzioni().trim();
-                        }
-
-                        if (tipo_domanda == Tipo_domanda.DOMANDA_APERTA) {
-                            questionJSON.append("\"type\": \"text\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCELTA_MULTIPLA) {
-                            String[] listaOpzioni = opzioni.split(",");
-                            Arrays.sort(listaOpzioni);
-                            questionJSON.append("\"type\": \"radiogroup\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCALA_VALUTAZIONE) {
-                            questionJSON.append("\"type\": \"rating\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
-                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
-                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SELECT) {
-                            String[] listaOpzioni = opzioni.split(",");
-                            Arrays.sort(listaOpzioni);
-                            questionJSON.append("\"type\": \"dropdown\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
-                        }
-                    }
-
-                    questionJSON.append("}");
-                    pageJSON.append(questionJSON.toString());
-                    pageJSON.append("]}");
-                    out.print(pageJSON.toString());
-                    if (domanda != domande.get(domande.size() - 1)) {
-                        out.print(",");
-                    }
-                    pageIndex++;
-                }
-            %>
-
-                    var progressiJSON = <%= progressi%>;
-                    var progressi = progressiJSON ? JSON.parse(JSON.stringify(progressiJSON)) : null;
-                    var currentPageIndex = progressi ? parseInt(progressi.currentPage) : 0;
-                    var savedAnswers = progressi ? progressi.risposte : {};
-                    Survey.surveyLocalization.defaultLocale = "it";
-                    var survey = new Survey.Model(surveyJSON);
-                    if (currentPageIndex > 0) {
-                    survey.currentPageNo = currentPageIndex;
-                    }
-
-                    Object.keys(savedAnswers).forEach(function (questionName) {
-                    if (questionName !== 'currentPage' && questionName !== 'questionarioId' && questionName !== 'userId') {
-                    var question = survey.getQuestionByName(questionName);
-                    if (question) {
-                    question.value = savedAnswers[questionName];
-                    }
-                    }
-                    });
-                    Survey.Serializer.addProperty("survey", "progressTitle");
-                    class PercentageProgressBar extends SurveyUI.ReactSurveyElement {
-                    render() {
-                    return (
-                            <div className="sv-progressbar-percentage">
-            <div className="sv-progressbar-percentage__title">
-            <span>{this.props.model.progressTitle}</span>
-                </div>
-                <div className="sv-progressbar-percentage__indicator">
-                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
-                </div>
-                <div className="sv-progressbar-percentage__value">
-                    <span>{this.props.model.progressValue + "%"}</span>
-                </div>
-            </div>
-                            );
-                    }
-                    }
-                    window.React = {createElement: SurveyUI.createElement};
-                    SurveyUI.ReactElementFactory.Instance.registerElement("sv-progressbar-percentage", props => {
-                    return React.createElement(PercentageProgressBar, props);
-                    });
-                    survey.addLayoutElement({
-                    id: "progressbar-percentage",
-                            component: "sv-progressbar-percentage",
-                            container: "contentTop",
-                            data: survey
-                    });
-                    const Theme = {
-                    "themeName": "plain",
-                            "colorPalette": "light",
-                            "isPanelless": false,
-                            "cssVariables": {
-                            "--sjs-general-backcolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-general-backcolor-dark": "rgba(248, 248, 248, 1)",
-                                    "--sjs-general-backcolor-dim": "rgba(255, 255, 255, 1)",
-                                    "--sjs-general-backcolor-dim-light": "rgba(255, 255, 255, 1)",
-                                    "--sjs-general-backcolor-dim-dark": "rgba(243, 243, 243, 1)",
-                                    "--sjs-general-forecolor": "rgba(0, 0, 0, 0.91)",
-                                    "--sjs-general-forecolor-light": "rgba(0, 0, 0, 0.45)",
-                                    "--sjs-general-dim-forecolor": "rgba(0, 0, 0, 0.91)",
-                                    "--sjs-general-dim-forecolor-light": "rgba(0, 0, 0, 0.45)",
-                                    "--sjs-primary-backcolor": "rgba(37, 137, 229, 1)",
-                                    "--sjs-primary-backcolor-light": "rgba(37, 137, 229, 0.1)",
-                                    "--sjs-primary-backcolor-dark": "rgba(21, 119, 209, 1)",
-                                    "--sjs-primary-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-primary-forecolor-light": "rgba(255, 255, 255, 0.25)",
-                                    "--sjs-base-unit": "8px",
-                                    "--sjs-corner-radius": "4px",
-                                    "--sjs-secondary-backcolor": "rgba(255, 152, 20, 1)",
-                                    "--sjs-secondary-backcolor-light": "rgba(255, 152, 20, 0.1)",
-                                    "--sjs-secondary-backcolor-semi-light": "rgba(255, 152, 20, 0.25)",
-                                    "--sjs-secondary-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-secondary-forecolor-light": "rgba(255, 255, 255, 0.25)",
-                                    "--sjs-shadow-small": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-shadow-small-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-shadow-medium": "0px 0px 0px 1px rgba(0, 0, 0, 0.1)",
-                                    "--sjs-shadow-large": "0px 8px 16px 0px rgba(0, 0, 0, 0.05)",
-                                    "--sjs-shadow-inner": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-shadow-inner-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-border-light": "rgba(0, 0, 0, 0.15)",
-                                    "--sjs-border-default": "rgba(0, 0, 0, 0.15)",
-                                    "--sjs-border-inside": "rgba(0, 0, 0, 0.16)",
-                                    "--sjs-special-red": "rgba(229, 10, 62, 1)",
-                                    "--sjs-special-red-light": "rgba(229, 10, 62, 0.1)",
-                                    "--sjs-special-red-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-special-green": "rgba(25, 179, 148, 1)",
-                                    "--sjs-special-green-light": "rgba(25, 179, 148, 0.1)",
-                                    "--sjs-special-green-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-special-blue": "rgba(67, 127, 217, 1)",
-                                    "--sjs-special-blue-light": "rgba(67, 127, 217, 0.1)",
-                                    "--sjs-special-blue-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-special-yellow": "rgba(255, 152, 20, 1)",
-                                    "--sjs-special-yellow-light": "rgba(255, 152, 20, 0.1)",
-                                    "--sjs-special-yellow-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-article-font-xx-large-textDecoration": "none",
-                                    "--sjs-article-font-xx-large-fontWeight": "700",
-                                    "--sjs-article-font-xx-large-fontStyle": "normal",
-                                    "--sjs-article-font-xx-large-fontStretch": "normal",
-                                    "--sjs-article-font-xx-large-letterSpacing": "0",
-                                    "--sjs-article-font-xx-large-lineHeight": "64px",
-                                    "--sjs-article-font-xx-large-paragraphIndent": "0px",
-                                    "--sjs-article-font-xx-large-textCase": "none",
-                                    "--sjs-article-font-x-large-textDecoration": "none",
-                                    "--sjs-article-font-x-large-fontWeight": "700",
-                                    "--sjs-article-font-x-large-fontStyle": "normal",
-                                    "--sjs-article-font-x-large-fontStretch": "normal",
-                                    "--sjs-article-font-x-large-letterSpacing": "0",
-                                    "--sjs-article-font-x-large-lineHeight": "56px",
-                                    "--sjs-article-font-x-large-paragraphIndent": "0px",
-                                    "--sjs-article-font-x-large-textCase": "none",
-                                    "--sjs-article-font-large-textDecoration": "none",
-                                    "--sjs-article-font-large-fontWeight": "700",
-                                    "--sjs-article-font-large-fontStyle": "normal",
-                                    "--sjs-article-font-large-fontStretch": "normal",
-                                    "--sjs-article-font-large-letterSpacing": "0",
-                                    "--sjs-article-font-large-lineHeight": "40px",
-                                    "--sjs-article-font-large-paragraphIndent": "0px",
-                                    "--sjs-article-font-large-textCase": "none",
-                                    "--sjs-article-font-medium-textDecoration": "none",
-                                    "--sjs-article-font-medium-fontWeight": "700",
-                                    "--sjs-article-font-medium-fontStyle": "normal",
-                                    "--sjs-article-font-medium-fontStretch": "normal",
-                                    "--sjs-article-font-medium-letterSpacing": "0",
-                                    "--sjs-article-font-medium-lineHeight": "32px",
-                                    "--sjs-article-font-medium-paragraphIndent": "0px",
-                                    "--sjs-article-font-medium-textCase": "none",
-                                    "--sjs-article-font-default-textDecoration": "none",
-                                    "--sjs-article-font-default-fontWeight": "400",
-                                    "--sjs-article-font-default-fontStyle": "normal",
-                                    "--sjs-article-font-default-fontStretch": "normal",
-                                    "--sjs-article-font-default-letterSpacing": "0",
-                                    "--sjs-article-font-default-lineHeight": "28px",
-                                    "--sjs-article-font-default-paragraphIndent": "0px",
-                                    "--sjs-article-font-default-textCase": "none"
-                            }
-                    };
-                    survey.applyTheme(Theme);
-                    survey.onComplete.add((sender, options) => {
-                    submitSurvey();
-                    });
-                    const converter = markdownit({
-                    html: true // Support HTML tags in the source (unsafe, see documentation)
-                    });
-                    survey.onTextMarkdown.add((_, options) => {
-                    // Convert Markdown to HTML
-                    let str = converter.renderInline(options.text);
-                    // ...
-                    // Sanitize the HTML markup using a third-party library here
-                    // ...
-                    // Set HTML markup to render
-                    options.html = str;
-                    });
-                    survey.onCurrentPageChanged.add(function(sender, options) {
-                    if (sender.currentPageNo === sender.pages.length - 1) {
-                    $("#sv-nav-save-progress").hide();
-                    } else {
-                    $("#sv-nav-save-progress").show();
-                    }
-                    });
-                    survey.render(document.getElementById("surveyContainer"));
-                    function submitSurvey() {
-                    var surveyData = survey.data;
-                    var formData = new FormData();
-                    formData.append("userId", "<%= userId%>");
-                    formData.append("questionarioId", "<%= questionarioId%>");
-                    Object.keys(surveyData).forEach(function (key) {
-                    var value = surveyData[key];
-                    var paramName = "risposta_" + key.split("_")[1];
-                    if (Array.isArray(value)) {
-                    value.forEach(function (val) {
-                    formData.append(paramName, val);
-                    });
-                    } else {
-                    formData.append(paramName, value);
-                    }
-                    });
-                    $.ajax({
-                    url: "QuestionarioServlet",
-                            type: "POST",
-                            data: JSON.stringify(surveyData),
-                            contentType: "application/json",
-                            success: function (response) {
-                            window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
-                            },
-                            error: function (xhr, status, error) {
-                            console.error(error);
-                            window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
-                            }
-                    });
-                    }
-
-                    $("#questionarioForm").on("submit", function (e) {
-                    e.preventDefault();
-                    submitSurvey();
-                    });
-                    survey.addNavigationItem({
-                    id: "sv-nav-save-progress",
-                            title: "Salva e continua in seguito",
-                            action: function () {
-                            var formData = {
-                            "userId": "<%= userId%>",
-                                    "questionarioId": "<%= questionarioId%>",
-                                    "currentPage": survey.currentPageNo,
-                                    "risposte": survey.data
-                            };
-                            $.ajax({
-                            url: "QuestionarioServlet?isContinueLater=true",
-                                    type: "POST",
-                                    data: JSON.stringify(formData),
-                                    contentType: "application/json",
-                                    success: function (response) {
-                                    window.location.href = 'US_questionario.jsp?esito=OK&codice=002';
-                                    },
-                                    error: function (xhr, status, error) {
-                                    console.error(error);
-                                    window.location.href = 'US_questionario.jsp?esito=KO&codice=002';
-                                    }
-                            });
-                            },
-                            css: "nav-button",
-                            innerCss: "sd-btn nav-input custom-button"
-                    });
-        </script>
-
-
-        <% } else {%>
-
-        <div class="container-fluid text-center">
-            <div id="surveyContainer"></div>
-
-            <form action="QuestionarioServlet" method="POST" id="questionarioForm">
-                <input type="hidden" name="userId" value="<%= userId%>">
-                <input type="hidden" name="questionarioId" value="<%= questionarioId%>">
-            </form>
-        </div>
-
-
-        <script type="text/babel">
-                    var surveyJSON = {
-                    "progressTitle": "Progressi questionario",
-                            "progressBarType": "questions",
-                            "showProgressBar": "top",
-                            "title": "Questionario di tipo - " + "<%= livello%>",
-                            "pages": [
             <% int pageIndex = 0;
                 for (Domanda domanda : domande) {
                     String titolo = domanda.getTitolo().trim();
@@ -1140,9 +788,6 @@
                         JSONArray risposteAutomatiche = jsonObj.getJSONArray("risposte");
                         JSONArray risposteCorrette = jsonObj.optJSONArray("risposte_corrette");
 
-                        questionJSON.append("\"title\": \"" + titolo.trim() + "\",");
-                        questionJSON.append("\"isRequired\": true,");
-
                         if (tipo.equals("domanda_scelta_multipla")) {
                             if (risposteCorrette != null && risposteCorrette.length() > 1) {
                                 questionJSON.append("\"type\": \"checkbox\",");
@@ -1155,7 +800,7 @@
 
                             for (int i = 0; i < risposteAutomatiche.length(); i++) {
                                 JSONObject r = risposteAutomatiche.getJSONObject(i);
-                                String testo = r.getString("testo").replace("\"", "\\\"").replaceAll("<[^>]*>", "");
+                                String testo = r.getString("testo");
                                 questionJSON.append("\"" + testo + "\"");
                                 if (i != risposteAutomatiche.length() - 1) {
                                     questionJSON.append(",");
@@ -1225,234 +870,599 @@
                     questionJSON.append("}");
                     pageJSON.append(questionJSON.toString());
                     pageJSON.append("]}");
-                    out.print(pageJSON.toString());
+
                     if (domanda != domande.get(domande.size() - 1)) {
-                        out.print(",");
+                        out.print(pageJSON.toString() + ",");
+                    } else {
+                        out.print(pageJSON.toString());
                     }
+
                     pageIndex++;
                 }
             %>
-                    var progressiJSON = <%= progressi%>;
-                    var progressi = progressiJSON ? JSON.parse(JSON.stringify(progressiJSON)) : null;
-                    var currentPageIndex = progressi ? parseInt(progressi.currentPage) : 0;
-                    var savedAnswers = progressi ? progressi.risposte : {};
-                    Survey.surveyLocalization.defaultLocale = "it";
-                    var survey = new Survey.Model(surveyJSON);
-                    if (currentPageIndex > 0) {
-                    survey.currentPageNo = currentPageIndex;
-                    }
+                    ]
+            };
+            var progressiJSON = <%= progressi%>;
+            var progressi = progressiJSON ? JSON.parse(progressiJSON) : null;
+            var currentPageIndex = progressi ? parseInt(progressi.currentPage) : 0;
+            var savedAnswers = progressi ? progressi.risposte : {};
+            Survey.surveyLocalization.defaultLocale = "it";
+            var survey = new Survey.Model(surveyJSON);
+            if (currentPageIndex > 0) {
+            survey.currentPageNo = currentPageIndex;
+            }
 
-                    Object.keys(savedAnswers).forEach(function (questionName) {
-                    if (questionName !== 'currentPage' && questionName !== 'questionarioId' && questionName !== 'userId') {
-                    var question = survey.getQuestionByName(questionName);
-                    if (question) {
-                    question.value = savedAnswers[questionName];
-                    }
-                    }
-                    });
-                    Survey.Serializer.addProperty("survey", "progressTitle");
-                    class PercentageProgressBar extends SurveyUI.ReactSurveyElement {
-                    render() {
-                    return (
-                            <div className="sv-progressbar-percentage">
-                                            <div className="sv-progressbar-percentage__title">
-            <span>{this.props.model.progressTitle}</span>
+            Object.keys(savedAnswers).forEach(function (questionName) {
+            if (questionName !== 'currentPage' && questionName !== 'questionarioId' && questionName !== 'userId') {
+            var question = survey.getQuestionByName(questionName);
+            if (question) {
+            question.value = savedAnswers[questionName];
+            }
+            }
+            });
+            Survey.Serializer.addProperty("survey", "progressTitle");
+            class PercentageProgressBar extends SurveyUI.ReactSurveyElement {
+            render() {
+            return (
+                    <div className="sv-progressbar-percentage">
+    <div className="sv-progressbar-percentage__title">
+        <span>{this.props.model.progressTitle}</span>
                 </div>
                 <div className="sv-progressbar-percentage__indicator">
-                                                <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
-                                                    </div>
-                                                <div className="sv-progressbar-percentage__value">
-                                                    <span>{this.props.model.progressValue + "%"}</span>
+                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
                 </div>
-                                                </div>
-                            );
+                <div className="sv-progressbar-percentage__value">
+                    <span>{this.props.model.progressValue + "%"}</span>
+                </div>
+            </div>
+                    );
+            }
+            }
+            window.React = {createElement: SurveyUI.createElement};
+            SurveyUI.ReactElementFactory.Instance.registerElement("sv-progressbar-percentage", props => {
+            return React.createElement(PercentageProgressBar, props);
+            });
+            survey.addLayoutElement({
+            id: "progressbar-percentage",
+                    component: "sv-progressbar-percentage",
+                    container: "contentTop",
+                    data: survey
+            });
+            const Theme = {
+            "themeName": "plain",
+                    "colorPalette": "light",
+                    "isPanelless": false,
+                    "cssVariables": {
+                    "--sjs-general-backcolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-general-backcolor-dark": "rgba(248, 248, 248, 1)",
+                            "--sjs-general-backcolor-dim": "rgba(255, 255, 255, 1)",
+                            "--sjs-general-backcolor-dim-light": "rgba(255, 255, 255, 1)",
+                            "--sjs-general-backcolor-dim-dark": "rgba(243, 243, 243, 1)",
+                            "--sjs-general-forecolor": "rgba(0, 0, 0, 0.91)",
+                            "--sjs-general-forecolor-light": "rgba(0, 0, 0, 0.45)",
+                            "--sjs-general-dim-forecolor": "rgba(0, 0, 0, 0.91)",
+                            "--sjs-general-dim-forecolor-light": "rgba(0, 0, 0, 0.45)",
+                            "--sjs-primary-backcolor": "rgba(37, 137, 229, 1)",
+                            "--sjs-primary-backcolor-light": "rgba(37, 137, 229, 0.1)",
+                            "--sjs-primary-backcolor-dark": "rgba(21, 119, 209, 1)",
+                            "--sjs-primary-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-primary-forecolor-light": "rgba(255, 255, 255, 0.25)",
+                            "--sjs-base-unit": "8px",
+                            "--sjs-corner-radius": "4px",
+                            "--sjs-secondary-backcolor": "rgba(255, 152, 20, 1)",
+                            "--sjs-secondary-backcolor-light": "rgba(255, 152, 20, 0.1)",
+                            "--sjs-secondary-backcolor-semi-light": "rgba(255, 152, 20, 0.25)",
+                            "--sjs-secondary-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-secondary-forecolor-light": "rgba(255, 255, 255, 0.25)",
+                            "--sjs-shadow-small": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
+                            "--sjs-shadow-small-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
+                            "--sjs-shadow-medium": "0px 0px 0px 1px rgba(0, 0, 0, 0.1)",
+                            "--sjs-shadow-large": "0px 8px 16px 0px rgba(0, 0, 0, 0.05)",
+                            "--sjs-shadow-inner": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
+                            "--sjs-shadow-inner-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
+                            "--sjs-border-light": "rgba(0, 0, 0, 0.15)",
+                            "--sjs-border-default": "rgba(0, 0, 0, 0.15)",
+                            "--sjs-border-inside": "rgba(0, 0, 0, 0.16)",
+                            "--sjs-special-red": "rgba(229, 10, 62, 1)",
+                            "--sjs-special-red-light": "rgba(229, 10, 62, 0.1)",
+                            "--sjs-special-red-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-special-green": "rgba(25, 179, 148, 1)",
+                            "--sjs-special-green-light": "rgba(25, 179, 148, 0.1)",
+                            "--sjs-special-green-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-special-blue": "rgba(67, 127, 217, 1)",
+                            "--sjs-special-blue-light": "rgba(67, 127, 217, 0.1)",
+                            "--sjs-special-blue-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-special-yellow": "rgba(255, 152, 20, 1)",
+                            "--sjs-special-yellow-light": "rgba(255, 152, 20, 0.1)",
+                            "--sjs-special-yellow-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-article-font-xx-large-textDecoration": "none",
+                            "--sjs-article-font-xx-large-fontWeight": "700",
+                            "--sjs-article-font-xx-large-fontStyle": "normal",
+                            "--sjs-article-font-xx-large-fontStretch": "normal",
+                            "--sjs-article-font-xx-large-letterSpacing": "0",
+                            "--sjs-article-font-xx-large-lineHeight": "64px",
+                            "--sjs-article-font-xx-large-paragraphIndent": "0px",
+                            "--sjs-article-font-xx-large-textCase": "none",
+                            "--sjs-article-font-x-large-textDecoration": "none",
+                            "--sjs-article-font-x-large-fontWeight": "700",
+                            "--sjs-article-font-x-large-fontStyle": "normal",
+                            "--sjs-article-font-x-large-fontStretch": "normal",
+                            "--sjs-article-font-x-large-letterSpacing": "0",
+                            "--sjs-article-font-x-large-lineHeight": "56px",
+                            "--sjs-article-font-x-large-paragraphIndent": "0px",
+                            "--sjs-article-font-x-large-textCase": "none",
+                            "--sjs-article-font-large-textDecoration": "none",
+                            "--sjs-article-font-large-fontWeight": "700",
+                            "--sjs-article-font-large-fontStyle": "normal",
+                            "--sjs-article-font-large-fontStretch": "normal",
+                            "--sjs-article-font-large-letterSpacing": "0",
+                            "--sjs-article-font-large-lineHeight": "40px",
+                            "--sjs-article-font-large-paragraphIndent": "0px",
+                            "--sjs-article-font-large-textCase": "none",
+                            "--sjs-article-font-medium-textDecoration": "none",
+                            "--sjs-article-font-medium-fontWeight": "700",
+                            "--sjs-article-font-medium-fontStyle": "normal",
+                            "--sjs-article-font-medium-fontStretch": "normal",
+                            "--sjs-article-font-medium-letterSpacing": "0",
+                            "--sjs-article-font-medium-lineHeight": "32px",
+                            "--sjs-article-font-medium-paragraphIndent": "0px",
+                            "--sjs-article-font-medium-textCase": "none",
+                            "--sjs-article-font-default-textDecoration": "none",
+                            "--sjs-article-font-default-fontWeight": "400",
+                            "--sjs-article-font-default-fontStyle": "normal",
+                            "--sjs-article-font-default-fontStretch": "normal",
+                            "--sjs-article-font-default-letterSpacing": "0",
+                            "--sjs-article-font-default-lineHeight": "28px",
+                            "--sjs-article-font-default-paragraphIndent": "0px",
+                            "--sjs-article-font-default-textCase": "none"
                     }
+            };
+            survey.applyTheme(Theme);
+            survey.onComplete.add((sender, options) => {
+            submitSurvey();
+            });
+            const converter = markdownit({
+            html: true // Support HTML tags in the source (unsafe, see documentation)
+            });
+            survey.onTextMarkdown.add((_, options) => {
+            // Convert Markdown to HTML
+            let str = converter.renderInline(options.text);
+            // ...
+            // Sanitize the HTML markup using a third-party library here
+            // ...
+            // Set HTML markup to render
+            options.html = str;
+            });
+            survey.onCurrentPageChanged.add(function(sender, options) {
+            if (sender.currentPageNo === sender.pages.length - 1) {
+            $("#sv-nav-save-progress").hide();
+            } else {
+            $("#sv-nav-save-progress").show();
+            }
+            });
+            survey.render(document.getElementById("surveyContainer"));
+            function submitSurvey() {
+            var surveyData = survey.data;
+            var formData = new FormData();
+            formData.append("userId", "<%= userId%>");
+            formData.append("questionarioId", "<%= questionarioId%>");
+            Object.keys(surveyData).forEach(function (key) {
+            var value = surveyData[key];
+            var paramName = "risposta_" + key.split("_")[1];
+            if (Array.isArray(value)) {
+            value.forEach(function (val) {
+            formData.append(paramName, val);
+            });
+            } else {
+            formData.append(paramName, value);
+            }
+            });
+            $.ajax({
+            url: "QuestionarioServlet",
+                    type: "POST",
+                    data: JSON.stringify(surveyData),
+                    contentType: "application/json",
+                    success: function (response) {
+                    window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
+                    },
+                    error: function (xhr, status, error) {
+                    console.error(error);
+                    window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
                     }
-                    window.React = {createElement: SurveyUI.createElement};
-                    SurveyUI.ReactElementFactory.Instance.registerElement("sv-progressbar-percentage", props => {
-                    return React.createElement(PercentageProgressBar, props);
-                    });
-                    survey.addLayoutElement({
-                    id: "progressbar-percentage",
-                            component: "sv-progressbar-percentage",
-                            container: "contentTop",
-                            data: survey
-                    });
-                    const Theme = {
-                    "themeName": "plain",
-                            "colorPalette": "light",
-                            "isPanelless": false,
-                            "cssVariables": {
-                            "--sjs-general-backcolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-general-backcolor-dark": "rgba(248, 248, 248, 1)",
-                                    "--sjs-general-backcolor-dim": "rgba(255, 255, 255, 1)",
-                                    "--sjs-general-backcolor-dim-light": "rgba(255, 255, 255, 1)",
-                                    "--sjs-general-backcolor-dim-dark": "rgba(243, 243, 243, 1)",
-                                    "--sjs-general-forecolor": "rgba(0, 0, 0, 0.91)",
-                                    "--sjs-general-forecolor-light": "rgba(0, 0, 0, 0.45)",
-                                    "--sjs-general-dim-forecolor": "rgba(0, 0, 0, 0.91)",
-                                    "--sjs-general-dim-forecolor-light": "rgba(0, 0, 0, 0.45)",
-                                    "--sjs-primary-backcolor": "rgba(37, 137, 229, 1)",
-                                    "--sjs-primary-backcolor-light": "rgba(37, 137, 229, 0.1)",
-                                    "--sjs-primary-backcolor-dark": "rgba(21, 119, 209, 1)",
-                                    "--sjs-primary-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-primary-forecolor-light": "rgba(255, 255, 255, 0.25)",
-                                    "--sjs-base-unit": "8px",
-                                    "--sjs-corner-radius": "4px",
-                                    "--sjs-secondary-backcolor": "rgba(255, 152, 20, 1)",
-                                    "--sjs-secondary-backcolor-light": "rgba(255, 152, 20, 0.1)",
-                                    "--sjs-secondary-backcolor-semi-light": "rgba(255, 152, 20, 0.25)",
-                                    "--sjs-secondary-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-secondary-forecolor-light": "rgba(255, 255, 255, 0.25)",
-                                    "--sjs-shadow-small": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-shadow-small-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-shadow-medium": "0px 0px 0px 1px rgba(0, 0, 0, 0.1)",
-                                    "--sjs-shadow-large": "0px 8px 16px 0px rgba(0, 0, 0, 0.05)",
-                                    "--sjs-shadow-inner": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-shadow-inner-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
-                                    "--sjs-border-light": "rgba(0, 0, 0, 0.15)",
-                                    "--sjs-border-default": "rgba(0, 0, 0, 0.15)",
-                                    "--sjs-border-inside": "rgba(0, 0, 0, 0.16)",
-                                    "--sjs-special-red": "rgba(229, 10, 62, 1)",
-                                    "--sjs-special-red-light": "rgba(229, 10, 62, 0.1)",
-                                    "--sjs-special-red-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-special-green": "rgba(25, 179, 148, 1)",
-                                    "--sjs-special-green-light": "rgba(25, 179, 148, 0.1)",
-                                    "--sjs-special-green-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-special-blue": "rgba(67, 127, 217, 1)",
-                                    "--sjs-special-blue-light": "rgba(67, 127, 217, 0.1)",
-                                    "--sjs-special-blue-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-special-yellow": "rgba(255, 152, 20, 1)",
-                                    "--sjs-special-yellow-light": "rgba(255, 152, 20, 0.1)",
-                                    "--sjs-special-yellow-forecolor": "rgba(255, 255, 255, 1)",
-                                    "--sjs-article-font-xx-large-textDecoration": "none",
-                                    "--sjs-article-font-xx-large-fontWeight": "700",
-                                    "--sjs-article-font-xx-large-fontStyle": "normal",
-                                    "--sjs-article-font-xx-large-fontStretch": "normal",
-                                    "--sjs-article-font-xx-large-letterSpacing": "0",
-                                    "--sjs-article-font-xx-large-lineHeight": "64px",
-                                    "--sjs-article-font-xx-large-paragraphIndent": "0px",
-                                    "--sjs-article-font-xx-large-textCase": "none",
-                                    "--sjs-article-font-x-large-textDecoration": "none",
-                                    "--sjs-article-font-x-large-fontWeight": "700",
-                                    "--sjs-article-font-x-large-fontStyle": "normal",
-                                    "--sjs-article-font-x-large-fontStretch": "normal",
-                                    "--sjs-article-font-x-large-letterSpacing": "0",
-                                    "--sjs-article-font-x-large-lineHeight": "56px",
-                                    "--sjs-article-font-x-large-paragraphIndent": "0px",
-                                    "--sjs-article-font-x-large-textCase": "none",
-                                    "--sjs-article-font-large-textDecoration": "none",
-                                    "--sjs-article-font-large-fontWeight": "700",
-                                    "--sjs-article-font-large-fontStyle": "normal",
-                                    "--sjs-article-font-large-fontStretch": "normal",
-                                    "--sjs-article-font-large-letterSpacing": "0",
-                                    "--sjs-article-font-large-lineHeight": "40px",
-                                    "--sjs-article-font-large-paragraphIndent": "0px",
-                                    "--sjs-article-font-large-textCase": "none",
-                                    "--sjs-article-font-medium-textDecoration": "none",
-                                    "--sjs-article-font-medium-fontWeight": "700",
-                                    "--sjs-article-font-medium-fontStyle": "normal",
-                                    "--sjs-article-font-medium-fontStretch": "normal",
-                                    "--sjs-article-font-medium-letterSpacing": "0",
-                                    "--sjs-article-font-medium-lineHeight": "32px",
-                                    "--sjs-article-font-medium-paragraphIndent": "0px",
-                                    "--sjs-article-font-medium-textCase": "none",
-                                    "--sjs-article-font-default-textDecoration": "none",
-                                    "--sjs-article-font-default-fontWeight": "400",
-                                    "--sjs-article-font-default-fontStyle": "normal",
-                                    "--sjs-article-font-default-fontStretch": "normal",
-                                    "--sjs-article-font-default-letterSpacing": "0",
-                                    "--sjs-article-font-default-lineHeight": "28px",
-                                    "--sjs-article-font-default-paragraphIndent": "0px",
-                                    "--sjs-article-font-default-textCase": "none"
-                            }
+            });
+            }
+
+            $("#questionarioForm").on("submit", function (e) {
+            e.preventDefault();
+            submitSurvey();
+            });
+            survey.addNavigationItem({
+            id: "sv-nav-save-progress",
+                    title: "Salva e continua in seguito",
+                    action: function () {
+                    var formData = {
+                    "userId": "<%= userId%>",
+                            "questionarioId": "<%= questionarioId%>",
+                            "currentPage": survey.currentPageNo,
+                            "risposte": survey.data
                     };
-                    survey.applyTheme(Theme);
-                    survey.onComplete.add((sender, options) => {
-                    submitSurvey();
-                    });
-                    const converter = markdownit({
-                    html: true // Support HTML tags in the source (unsafe, see documentation)
-                    });
-                    survey.onTextMarkdown.add((_, options) => {
-                    // Convert Markdown to HTML
-                    let str = converter.renderInline(options.text);
-                    // ...
-                    // Sanitize the HTML markup using a third-party library here
-                    // ...
-                    // Set HTML markup to render
-                    options.html = str;
-                    });
-                    survey.onCurrentPageChanged.add(function(sender, options) {
-                    if (sender.currentPageNo === sender.pages.length - 1) {
-                    $("#sv-nav-save-progress").hide();
-                    } else {
-                    $("#sv-nav-save-progress").show();
-                    }
-                    });
-                    survey.render(document.getElementById("surveyContainer"));
-                    function submitSurvey() {
-                    var surveyData = survey.data;
-                    var formData = new FormData();
-                    formData.append("userId", "<%= userId%>");
-                    formData.append("questionarioId", "<%= questionarioId%>");
-                    Object.keys(surveyData).forEach(function (key) {
-                    var value = surveyData[key];
-                    var paramName = "risposta_" + key.split("_")[1];
-                    if (Array.isArray(value)) {
-                    value.forEach(function (val) {
-                    formData.append(paramName, val);
-                    });
-                    } else {
-                    formData.append(paramName, value);
-                    }
-                    });
                     $.ajax({
-                    url: "QuestionarioServlet",
+                    url: "QuestionarioServlet?isContinueLater=true",
                             type: "POST",
-                            data: JSON.stringify(surveyData),
+                            data: JSON.stringify(formData),
                             contentType: "application/json",
                             success: function (response) {
-                            window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
+                            window.location.href = 'US_questionario.jsp?esito=OK&codice=002';
                             },
                             error: function (xhr, status, error) {
                             console.error(error);
-                            window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
+                            window.location.href = 'US_questionario.jsp?esito=KO&codice=002';
                             }
                     });
+                    },
+                    css: "nav-button",
+                    innerCss: "sd-btn nav-input custom-button"
+            });
+        </script>
+
+
+        <% } else {%>
+
+        <div class="container-fluid text-center">
+            <div id="surveyContainer"></div>
+
+            <form action="QuestionarioServlet" method="POST" id="questionarioForm">
+                <input type="hidden" name="userId" value="<%= userId%>">
+                <input type="hidden" name="questionarioId" value="<%= questionarioId%>">
+            </form>
+        </div>
+
+
+        <script type="text/babel">
+            var surveyJSON = {
+            "progressTitle": "Progressi questionario",
+                    "progressBarType": "questions",
+                    "showProgressBar": "top",
+                    "title": "Questionario di tipo - " + "<%= livello%>",
+                    "pages": [
+            <% int pageIndex = 0;
+                for (Domanda domanda : domande) {
+                    String titolo = domanda.getTitolo().trim();
+                    Tipo_domanda tipo_domanda = domanda.getTipo_domanda();
+                    StringBuilder pageJSON = new StringBuilder();
+                    pageJSON.append("{");
+                    pageJSON.append("\"title\": \"Domanda " + (pageIndex + 1) + "\",");
+
+                    pageJSON.append("\"questions\": [");
+                    StringBuilder questionJSON = new StringBuilder();
+                    questionJSON.append("{");
+                    questionJSON.append("\"title\": \"" + titolo + "\",");
+
+                    questionJSON.append("\"isRequired\": true,");
+
+                    if (domanda.getTipo_inserimento() != null && !domanda.getTipo_inserimento().equals(Tipo_inserimento.MANUALE)) {
+                        String jsonDomanda = domanda.getRisposte();
+                        JSONObject jsonObj = new JSONObject(jsonDomanda);
+
+                        String tipo = jsonObj.getString("tipo_domanda").toLowerCase();
+                        JSONArray risposteAutomatiche = jsonObj.getJSONArray("risposte");
+                        JSONArray risposteCorrette = jsonObj.optJSONArray("risposte_corrette");
+
+                        if (tipo.equals("domanda_scelta_multipla")) {
+                            if (risposteCorrette != null && risposteCorrette.length() > 1) {
+                                questionJSON.append("\"type\": \"checkbox\",");
+                            } else {
+                                questionJSON.append("\"type\": \"radiogroup\",");
+                            }
+
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+                            questionJSON.append("\"choices\": [");
+
+                            for (int i = 0; i < risposteAutomatiche.length(); i++) {
+                                JSONObject r = risposteAutomatiche.getJSONObject(i);
+                                String testo = r.getString("testo");
+                                questionJSON.append("\"" + testo + "\"");
+                                if (i != risposteAutomatiche.length() - 1) {
+                                    questionJSON.append(",");
+                                }
+                            }
+
+                            questionJSON.append("]");
+
+                        } else if (tipo.equals("domanda_scala_valutazione")) {
+                            questionJSON.append("\"type\": \"rating\",");
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
+                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
+                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
+
+                        } else if (tipo.equals("domanda_select")) {
+                            questionJSON.append("\"type\": \"dropdown\",");
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+                            questionJSON.append("\"choices\": [");
+
+                            for (int i = 0; i < risposteAutomatiche.length(); i++) {
+                                JSONObject r = risposteAutomatiche.getJSONObject(i);
+                                String testo = r.getString("testo").replace("\"", "\\\"").replaceAll("<[^>]*>", "");
+                                questionJSON.append("\"" + testo + "\"");
+                                if (i != risposteAutomatiche.length() - 1) {
+                                    questionJSON.append(",");
+                                }
+                            }
+
+                            questionJSON.append("]");
+
+                        } else {
+                            questionJSON.append("\"type\": \"text\",");
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
+                        }
+
+                    } else {
+                        String opzioni = null;
+                        if (domanda.getOpzioni() != null) {
+                            opzioni = domanda.getOpzioni().trim();
+                        }
+
+                        if (tipo_domanda == Tipo_domanda.DOMANDA_APERTA) {
+                            questionJSON.append("\"type\": \"text\",");
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
+                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCELTA_MULTIPLA) {
+                            String[] listaOpzioni = opzioni.split(",");
+                            Arrays.sort(listaOpzioni);
+                            questionJSON.append("\"type\": \"radiogroup\",");
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
+                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCALA_VALUTAZIONE) {
+                            questionJSON.append("\"type\": \"rating\",");
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
+                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
+                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
+                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SELECT) {
+                            String[] listaOpzioni = opzioni.split(",");
+                            Arrays.sort(listaOpzioni);
+                            questionJSON.append("\"type\": \"dropdown\",");
+                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
+                        }
                     }
 
-                    $("#questionarioForm").on("submit", function (e) {
-                    e.preventDefault();
-                    submitSurvey();
-                    });
-                    survey.addNavigationItem({
-                    id: "sv-nav-save-progress",
-                            title: "Salva e continua in seguito",
-                            action: function () {
-                            var formData = {
-                            "userId": "<%= userId%>",
-                                    "questionarioId": "<%= questionarioId%>",
-                                    "currentPage": survey.currentPageNo,
-                                    "risposte": survey.data
-                            };
-                            $.ajax({
-                            url: "QuestionarioServlet?isContinueLater=true",
-                                    type: "POST",
-                                    data: JSON.stringify(formData),
-                                    contentType: "application/json",
-                                    success: function (response) {
-                                    window.location.href = 'US_questionario.jsp?esito=OK&codice=002';
-                                    },
-                                    error: function (xhr, status, error) {
-                                    console.error(error);
-                                    window.location.href = 'US_questionario.jsp?esito=KO&codice=002';
-                                    }
-                            });
+                    questionJSON.append("}");
+                    pageJSON.append(questionJSON.toString());
+                    pageJSON.append("]}");
+
+                    if (domanda != domande.get(domande.size() - 1)) {
+                        out.print(pageJSON.toString() + ",");
+                    } else {
+                        out.print(pageJSON.toString());
+                    }
+
+                    pageIndex++;
+                }
+            %>
+                    ]
+            };
+            var progressiJSON = <%= progressi%>;
+            var progressi = progressiJSON ? JSON.parse(progressiJSON) : null;
+            var currentPageIndex = progressi ? parseInt(progressi.currentPage) : 0;
+            var savedAnswers = progressi ? progressi.risposte : {};
+            Survey.surveyLocalization.defaultLocale = "it";
+            var survey = new Survey.Model(surveyJSON);
+            if (currentPageIndex > 0) {
+            survey.currentPageNo = currentPageIndex;
+            }
+
+            Object.keys(savedAnswers).forEach(function (questionName) {
+            if (questionName !== 'currentPage' && questionName !== 'questionarioId' && questionName !== 'userId') {
+            var question = survey.getQuestionByName(questionName);
+            if (question) {
+            question.value = savedAnswers[questionName];
+            }
+            }
+            });
+            Survey.Serializer.addProperty("survey", "progressTitle");
+            class PercentageProgressBar extends SurveyUI.ReactSurveyElement {
+            render() {
+            return (
+                    <div className="sv-progressbar-percentage">
+                                                            <div className="sv-progressbar-percentage__title">
+            <span>{this.props.model.progressTitle}</span>
+                </div>
+                <div className="sv-progressbar-percentage__indicator">
+                                        <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
+                        </div>
+                <div className="sv-progressbar-percentage__value">
+        <span>{this.props.model.progressValue + "%"}</span>
+                </div>
+            </div>
+                    );
+            }
+            }
+            window.React = {createElement: SurveyUI.createElement};
+            SurveyUI.ReactElementFactory.Instance.registerElement("sv-progressbar-percentage", props => {
+            return React.createElement(PercentageProgressBar, props);
+            });
+            survey.addLayoutElement({
+            id: "progressbar-percentage",
+                    component: "sv-progressbar-percentage",
+                    container: "contentTop",
+                    data: survey
+            });
+            const Theme = {
+            "themeName": "plain",
+                    "colorPalette": "light",
+                    "isPanelless": false,
+                    "cssVariables": {
+                    "--sjs-general-backcolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-general-backcolor-dark": "rgba(248, 248, 248, 1)",
+                            "--sjs-general-backcolor-dim": "rgba(255, 255, 255, 1)",
+                            "--sjs-general-backcolor-dim-light": "rgba(255, 255, 255, 1)",
+                            "--sjs-general-backcolor-dim-dark": "rgba(243, 243, 243, 1)",
+                            "--sjs-general-forecolor": "rgba(0, 0, 0, 0.91)",
+                            "--sjs-general-forecolor-light": "rgba(0, 0, 0, 0.45)",
+                            "--sjs-general-dim-forecolor": "rgba(0, 0, 0, 0.91)",
+                            "--sjs-general-dim-forecolor-light": "rgba(0, 0, 0, 0.45)",
+                            "--sjs-primary-backcolor": "rgba(37, 137, 229, 1)",
+                            "--sjs-primary-backcolor-light": "rgba(37, 137, 229, 0.1)",
+                            "--sjs-primary-backcolor-dark": "rgba(21, 119, 209, 1)",
+                            "--sjs-primary-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-primary-forecolor-light": "rgba(255, 255, 255, 0.25)",
+                            "--sjs-base-unit": "8px",
+                            "--sjs-corner-radius": "4px",
+                            "--sjs-secondary-backcolor": "rgba(255, 152, 20, 1)",
+                            "--sjs-secondary-backcolor-light": "rgba(255, 152, 20, 0.1)",
+                            "--sjs-secondary-backcolor-semi-light": "rgba(255, 152, 20, 0.25)",
+                            "--sjs-secondary-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-secondary-forecolor-light": "rgba(255, 255, 255, 0.25)",
+                            "--sjs-shadow-small": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
+                            "--sjs-shadow-small-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
+                            "--sjs-shadow-medium": "0px 0px 0px 1px rgba(0, 0, 0, 0.1)",
+                            "--sjs-shadow-large": "0px 8px 16px 0px rgba(0, 0, 0, 0.05)",
+                            "--sjs-shadow-inner": "0px 0px 0px 1px rgba(0, 0, 0, 0.15)",
+                            "--sjs-shadow-inner-reset": "0px 0px 0px 0px rgba(0, 0, 0, 0.15)",
+                            "--sjs-border-light": "rgba(0, 0, 0, 0.15)",
+                            "--sjs-border-default": "rgba(0, 0, 0, 0.15)",
+                            "--sjs-border-inside": "rgba(0, 0, 0, 0.16)",
+                            "--sjs-special-red": "rgba(229, 10, 62, 1)",
+                            "--sjs-special-red-light": "rgba(229, 10, 62, 0.1)",
+                            "--sjs-special-red-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-special-green": "rgba(25, 179, 148, 1)",
+                            "--sjs-special-green-light": "rgba(25, 179, 148, 0.1)",
+                            "--sjs-special-green-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-special-blue": "rgba(67, 127, 217, 1)",
+                            "--sjs-special-blue-light": "rgba(67, 127, 217, 0.1)",
+                            "--sjs-special-blue-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-special-yellow": "rgba(255, 152, 20, 1)",
+                            "--sjs-special-yellow-light": "rgba(255, 152, 20, 0.1)",
+                            "--sjs-special-yellow-forecolor": "rgba(255, 255, 255, 1)",
+                            "--sjs-article-font-xx-large-textDecoration": "none",
+                            "--sjs-article-font-xx-large-fontWeight": "700",
+                            "--sjs-article-font-xx-large-fontStyle": "normal",
+                            "--sjs-article-font-xx-large-fontStretch": "normal",
+                            "--sjs-article-font-xx-large-letterSpacing": "0",
+                            "--sjs-article-font-xx-large-lineHeight": "64px",
+                            "--sjs-article-font-xx-large-paragraphIndent": "0px",
+                            "--sjs-article-font-xx-large-textCase": "none",
+                            "--sjs-article-font-x-large-textDecoration": "none",
+                            "--sjs-article-font-x-large-fontWeight": "700",
+                            "--sjs-article-font-x-large-fontStyle": "normal",
+                            "--sjs-article-font-x-large-fontStretch": "normal",
+                            "--sjs-article-font-x-large-letterSpacing": "0",
+                            "--sjs-article-font-x-large-lineHeight": "56px",
+                            "--sjs-article-font-x-large-paragraphIndent": "0px",
+                            "--sjs-article-font-x-large-textCase": "none",
+                            "--sjs-article-font-large-textDecoration": "none",
+                            "--sjs-article-font-large-fontWeight": "700",
+                            "--sjs-article-font-large-fontStyle": "normal",
+                            "--sjs-article-font-large-fontStretch": "normal",
+                            "--sjs-article-font-large-letterSpacing": "0",
+                            "--sjs-article-font-large-lineHeight": "40px",
+                            "--sjs-article-font-large-paragraphIndent": "0px",
+                            "--sjs-article-font-large-textCase": "none",
+                            "--sjs-article-font-medium-textDecoration": "none",
+                            "--sjs-article-font-medium-fontWeight": "700",
+                            "--sjs-article-font-medium-fontStyle": "normal",
+                            "--sjs-article-font-medium-fontStretch": "normal",
+                            "--sjs-article-font-medium-letterSpacing": "0",
+                            "--sjs-article-font-medium-lineHeight": "32px",
+                            "--sjs-article-font-medium-paragraphIndent": "0px",
+                            "--sjs-article-font-medium-textCase": "none",
+                            "--sjs-article-font-default-textDecoration": "none",
+                            "--sjs-article-font-default-fontWeight": "400",
+                            "--sjs-article-font-default-fontStyle": "normal",
+                            "--sjs-article-font-default-fontStretch": "normal",
+                            "--sjs-article-font-default-letterSpacing": "0",
+                            "--sjs-article-font-default-lineHeight": "28px",
+                            "--sjs-article-font-default-paragraphIndent": "0px",
+                            "--sjs-article-font-default-textCase": "none"
+                    }
+            };
+            survey.applyTheme(Theme);
+            survey.onComplete.add((sender, options) => {
+            submitSurvey();
+            });
+            const converter = markdownit({
+            html: true // Support HTML tags in the source (unsafe, see documentation)
+            });
+            survey.onTextMarkdown.add((_, options) => {
+            // Convert Markdown to HTML
+            let str = converter.renderInline(options.text);
+            // ...
+            // Sanitize the HTML markup using a third-party library here
+            // ...
+            // Set HTML markup to render
+            options.html = str;
+            });
+            survey.onCurrentPageChanged.add(function(sender, options) {
+            if (sender.currentPageNo === sender.pages.length - 1) {
+            $("#sv-nav-save-progress").hide();
+            } else {
+            $("#sv-nav-save-progress").show();
+            }
+            });
+            survey.render(document.getElementById("surveyContainer"));
+            function submitSurvey() {
+            var surveyData = survey.data;
+            var formData = new FormData();
+            formData.append("userId", "<%= userId%>");
+            formData.append("questionarioId", "<%= questionarioId%>");
+            Object.keys(surveyData).forEach(function (key) {
+            var value = surveyData[key];
+            var paramName = "risposta_" + key.split("_")[1];
+            if (Array.isArray(value)) {
+            value.forEach(function (val) {
+            formData.append(paramName, val);
+            });
+            } else {
+            formData.append(paramName, value);
+            }
+            });
+            $.ajax({
+            url: "QuestionarioServlet",
+                    type: "POST",
+                    data: JSON.stringify(surveyData),
+                    contentType: "application/json",
+                    success: function (response) {
+                    window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
+                    },
+                    error: function (xhr, status, error) {
+                    console.error(error);
+                    window.location.href = 'US_questionario.jsp?esito=OK&codice=003';
+                    }
+            });
+            }
+
+            $("#questionarioForm").on("submit", function (e) {
+            e.preventDefault();
+            submitSurvey();
+            });
+            survey.addNavigationItem({
+            id: "sv-nav-save-progress",
+                    title: "Salva e continua in seguito",
+                    action: function () {
+                    var formData = {
+                    "userId": "<%= userId%>",
+                            "questionarioId": "<%= questionarioId%>",
+                            "currentPage": survey.currentPageNo,
+                            "risposte": survey.data
+                    };
+                    $.ajax({
+                    url: "QuestionarioServlet?isContinueLater=true",
+                            type: "POST",
+                            data: JSON.stringify(formData),
+                            contentType: "application/json",
+                            success: function (response) {
+                            window.location.href = 'US_questionario.jsp?esito=OK&codice=002';
                             },
-                            css: "nav-button",
-                            innerCss: "sd-btn nav-input custom-button"
+                            error: function (xhr, status, error) {
+                            console.error(error);
+                            window.location.href = 'US_questionario.jsp?esito=KO&codice=002';
+                            }
                     });
+                    },
+                    css: "nav-button",
+                    innerCss: "sd-btn nav-input custom-button"
+            });
         </script>
 
         <% }
@@ -1650,10 +1660,10 @@
         </div>
 
         <script>
-                    var button = document.getElementById('torna_homepage');
-                    button.addEventListener('click', function () {
-                    window.location.href = "US_homepage.jsp";
-                    });</script>
+            var button = document.getElementById('torna_homepage');
+            button.addEventListener('click', function () {
+            window.location.href = "US_homepage.jsp";
+            });</script>
 
 
         <%}%>
