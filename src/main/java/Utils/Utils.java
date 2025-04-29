@@ -120,11 +120,24 @@ public class Utils {
     public static final ResourceBundle config = ResourceBundle.getBundle("conf.config");
 
     public void generaExcel(Map<Long, Map<Long, int[]>> categoriaSottocategoriaStats) {
+        int maxLength = 40;
+
+        for (Map.Entry<Long, Map<Long, int[]>> entry : categoriaSottocategoriaStats.entrySet()) {
+            Long categoriaId = entry.getKey();
+            Map<Long, int[]> sottocategoriaStats = entry.getValue();
+            System.out.println("Categoria ID: " + categoriaId);
+            for (Map.Entry<Long, int[]> subEntry : sottocategoriaStats.entrySet()) {
+                Long competenzaId = subEntry.getKey();
+                int[] stats = subEntry.getValue();
+                System.out.println("  Competenza ID: " + competenzaId + " - Domande Totali: " + stats[1] + ", Risposte Corrette: " + stats[0]);
+            }
+        }
+
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Statistiche Questionari");
 
         Row headerRow = sheet.createRow(0);
-        String[] colonne = {"Categoria", "SottoCategoria", "Competenza", "Abilità/Conoscenze", "Livello", "Domande Totali", "Risposte Corrette", "Risposte Sbagliate", "Percentuale"};
+        String[] colonne = {"Categoria", "Competenza", "Abilità/Conoscenze", "Livello", "Domande totali", "Risposte corrette", "Risposte errate", "Percentuale"};
 
         for (int i = 0; i < colonne.length; i++) {
             Cell cell = headerRow.createCell(i);
@@ -144,38 +157,39 @@ public class Utils {
             int categoriaTotale = 0;
             int categoriaCorrette = 0;
 
-            List<SottoCategoria> tutteLeSottoCategorie = jPAUtil.findAllSottoCategorieByCategoriaId(categoriaId);
-            for (SottoCategoria sottocategoria : tutteLeSottoCategorie) {
-                List<Competenza> tutteLeCompetenze = jPAUtil.findAllCompetenzeBySottoCategoriaId(sottocategoria.getId());
+            List<Competenza> tutteLeCompetenze = jPAUtil.findAllCompetenzeByCategoriaId(categoriaId);
+            for (Competenza competenza : tutteLeCompetenze) {
+                Row row = sheet.createRow(rowNum++);
+                Long competenzaId = competenza.getId();
 
-                for (Competenza competenza : tutteLeCompetenze) {
-                    Row row = sheet.createRow(rowNum++);
-                    Long competenzaId = competenza.getId();
-
-                    int domandeTotali = 0;
-                    int risposteCorrette = 0;
-                    if (entry.getValue().containsKey(competenzaId)) {
-                        domandeTotali = entry.getValue().get(competenzaId)[0];
-                        risposteCorrette = entry.getValue().get(competenzaId)[1];
-                    }
-
-                    int risposteSbagliate = domandeTotali - risposteCorrette;
-                    double percentuale = domandeTotali > 0 ? ((double) risposteCorrette / domandeTotali) * 100 : 0;
-
-                    categoriaTotale += domandeTotali;
-                    categoriaCorrette += risposteCorrette;
-
-                    row.createCell(0).setCellValue(categoria.getNome());
-                    row.createCell(1).setCellValue(sottocategoria.getNome());
-                    row.createCell(2).setCellValue(competenza.getAreeCompetenze().getNome());
-                    row.createCell(3).setCellValue(competenza.getDescrizione());
-                    row.createCell(4).setCellValue(competenza.getLivello());
-
-                    row.createCell(5).setCellValue(domandeTotali);
-                    row.createCell(6).setCellValue(risposteCorrette);
-                    row.createCell(7).setCellValue(risposteSbagliate);
-                    row.createCell(8).setCellValue(String.format("%.2f%%", percentuale));
+                int domandeTotali = 0;
+                int risposteCorrette = 0;
+                if (entry.getValue().containsKey(competenzaId)) {
+                    domandeTotali = entry.getValue().get(competenzaId)[1];
+                    risposteCorrette = entry.getValue().get(competenzaId)[0];
                 }
+
+                int risposteSbagliate = domandeTotali - risposteCorrette;
+                double percentuale = domandeTotali > 0 ? ((double) risposteCorrette / domandeTotali) * 100 : 0;
+
+                categoriaTotale += domandeTotali;
+                categoriaCorrette += risposteCorrette;
+
+                String areaCompetenza = competenza.getAreeCompetenze().getNome();
+                String descrizioneCompetenza = competenza.getDescrizione();
+
+                areaCompetenza = truncateString(areaCompetenza, maxLength);
+                descrizioneCompetenza = truncateString(descrizioneCompetenza, maxLength);
+
+                row.createCell(0).setCellValue(categoria.getNome());
+                row.createCell(1).setCellValue(areaCompetenza);
+                row.createCell(2).setCellValue(descrizioneCompetenza);
+                row.createCell(3).setCellValue(competenza.getLivello());
+
+                row.createCell(4).setCellValue(domandeTotali);
+                row.createCell(5).setCellValue(risposteCorrette);
+                row.createCell(6).setCellValue(risposteSbagliate);
+                row.createCell(7).setCellValue(String.format("%.2f%%", percentuale));
             }
 
             Row categoriaRow = sheet.createRow(rowNum++);
@@ -189,11 +203,10 @@ public class Utils {
             categoriaRow.createCell(1).setCellValue("");
             categoriaRow.createCell(2).setCellValue("");
             categoriaRow.createCell(3).setCellValue("");
-            categoriaRow.createCell(4).setCellValue("");
-            categoriaRow.createCell(5).setCellValue(categoriaTotale);
-            categoriaRow.createCell(6).setCellValue(categoriaCorrette);
-            categoriaRow.createCell(7).setCellValue(risposteSbagliateCategoria);
-            categoriaRow.createCell(8).setCellValue(String.format("%.2f%%", percentualeCategoria));
+            categoriaRow.createCell(4).setCellValue(categoriaTotale);
+            categoriaRow.createCell(5).setCellValue(categoriaCorrette);
+            categoriaRow.createCell(6).setCellValue(risposteSbagliateCategoria);
+            categoriaRow.createCell(7).setCellValue(String.format("%.2f%%", percentualeCategoria));
         }
 
         Row totalRow = sheet.createRow(rowNum++);
@@ -203,11 +216,10 @@ public class Utils {
         totalRow.createCell(1).setCellValue("");
         totalRow.createCell(2).setCellValue("");
         totalRow.createCell(3).setCellValue("");
-        totalRow.createCell(4).setCellValue("");
-        totalRow.createCell(5).setCellValue(totaleDomande);
-        totalRow.createCell(6).setCellValue(totaleCorrette);
-        totalRow.createCell(7).setCellValue(totaleDomande - totaleCorrette);
-        totalRow.createCell(8).setCellValue(String.format("%.2f%%", percentualeTotale));
+        totalRow.createCell(4).setCellValue(totaleDomande);
+        totalRow.createCell(5).setCellValue(totaleCorrette);
+        totalRow.createCell(6).setCellValue(totaleDomande - totaleCorrette);
+        totalRow.createCell(7).setCellValue(String.format("%.2f%%", percentualeTotale));
 
         for (int i = 0; i < colonne.length; i++) {
             sheet.autoSizeColumn(i);
@@ -227,6 +239,13 @@ public class Utils {
                 LOGGER.error("Errore nella creazione del file excel: " + estraiEccezione(e));
             }
         }
+    }
+
+    private String truncateString(String str, int maxLength) {
+        if (str == null) {
+            return "";
+        }
+        return str.length() > maxLength ? str.substring(0, maxLength) + "..." : str;
     }
 
     private CellStyle creaStileIntestazione(Workbook workbook) {
@@ -255,7 +274,7 @@ public class Utils {
         }
         return "-";
     }
-    
+
     public static String escapeJsonString(String jsonString) {
         if (jsonString == null) {
             return null;
@@ -263,7 +282,7 @@ public class Utils {
         StringBuilder escapedString = new StringBuilder();
         for (int i = 0; i < jsonString.length(); i++) {
             char c = jsonString.charAt(i);
-            
+
             switch (c) {
                 case '\\':
                     escapedString.append("\\\\");
@@ -292,6 +311,13 @@ public class Utils {
             }
         }
         return escapedString.toString();
+    }
+
+    public static String removeHtmlTags(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replaceAll("<[^>]*>", "").trim();
     }
 
 }

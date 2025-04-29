@@ -23,7 +23,6 @@ public class ControllaDigicomp {
     public static void main(String[] args) {
         JPAUtil jpaUtil = new JPAUtil();
         try {
-
             List<Utente> utenti = jpaUtil.findAllUtenti();
             ObjectMapper objectMapper = new ObjectMapper();
 
@@ -70,17 +69,41 @@ public class ControllaDigicomp {
                 for (Iterator<Map.Entry<String, JsonNode>> it = risposteNode.fields(); it.hasNext();) {
                     Map.Entry<String, JsonNode> entry = it.next();
                     JsonNode rispostaUtente = entry.getValue();
+                    Long domandaId = Utils.tryParseLong(entry.getKey());
 
-                    String rispostaData = rispostaUtente.path("risposta").asText();
-                    String rispostaCorretta = rispostaUtente.path("risposta corretta").asText();
-                    Long domandaId = Utils.tryParseLong((entry.getKey()));
+                    //DOMANDE MANUALI
+                    if (rispostaUtente.has("risposta") && rispostaUtente.has("risposta corretta")) {
+                        String rispostaData = rispostaUtente.path("risposta").asText();
+                        String rispostaCorretta = rispostaUtente.path("risposta corretta").asText();
 
-                    if (rispostaData.equalsIgnoreCase(rispostaCorretta)) {
-                        Long categoriaId = jpaUtil.getCategoriaIdByDomandaId(domandaId);
-                        risposteCorrettePerCategoria.put(categoriaId, risposteCorrettePerCategoria.getOrDefault(categoriaId, 0) + 1);
-                        risposteCorretteTotali++;
+                        if (rispostaData.equalsIgnoreCase(rispostaCorretta)) {
+                            Long categoriaId = jpaUtil.getCategoriaIdByDomandaId(domandaId);
+                            risposteCorrettePerCategoria.put(categoriaId, risposteCorrettePerCategoria.getOrDefault(categoriaId, 0) + 1);
+                            risposteCorretteTotali++;
+                        } else {
+                            domandeSbagliate.add("Domanda ID: " + domandaId + " - Risposta sbagliata.");
+                        }
+                    } //DOMANDE AUTOMATICHE
+                    else if (rispostaUtente.has("risposta_id") && rispostaUtente.has("risposte_corrette")) {
+                        Set<String> risposteDate = new HashSet<>();
+                        for (JsonNode id : rispostaUtente.withArray("risposta_id")) {
+                            risposteDate.add(id.asText());
+                        }
+
+                        Set<String> risposteCorrette = new HashSet<>();
+                        for (JsonNode id : rispostaUtente.withArray("risposte_corrette")) {
+                            risposteCorrette.add(id.asText());
+                        }
+
+                        if (risposteDate.equals(risposteCorrette)) {
+                            Long categoriaId = jpaUtil.getCategoriaIdByDomandaId(domandaId);
+                            risposteCorrettePerCategoria.put(categoriaId, risposteCorrettePerCategoria.getOrDefault(categoriaId, 0) + 1);
+                            risposteCorretteTotali++;
+                        } else {
+                            domandeSbagliate.add("Domanda ID: " + domandaId + " - Risposte multiple sbagliate.");
+                        }
                     } else {
-                        domandeSbagliate.add("Domanda ID: " + domandaId + " - Risposta sbagliata.");
+                        domandeSbagliate.add("Domanda ID: " + domandaId + " - Formato risposta non riconosciuto.");
                     }
                 }
 
@@ -115,7 +138,7 @@ public class ControllaDigicomp {
                     jpaUtil.assegnaNuovoQuestionario(ultimoQuestionario, livelloCorrente);
                 } else {
                     LOGGER.info("Il questionario con ID " + ultimoQuestionario.getId() + " per l'utente " + utente.getId() + " non ha superato il livello " + livelloCorrente);
-                    //jpaUtil.createExcel(ultimoQuestionario);
+                    jpaUtil.createExcel(ultimoQuestionario); // puoi sbloccarlo se vuoi generare Excel anche in caso di fallimento
                     for (String errore : domandeSbagliate) {
                         LOGGER.info(errore);
                     }

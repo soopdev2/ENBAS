@@ -418,7 +418,7 @@
                                         risposteList.add(rispostaData);
                                     }
 
-                                    
+
                                 %>
 
                                 <br>
@@ -455,7 +455,6 @@
                                                 List<String> risposteUtente = (List<String>) rispostaData.get("risposteUtente");
                                                 List<String> risposteGiuste = (List<String>) rispostaData.get("risposteGiuste");
 
-                                            
                                                 List<String> risposteUtentePulite = new ArrayList<>();
                                                 for (String r : risposteUtente) {
                                                     risposteUtentePulite.add(r.replaceAll("<[^>]*>", "").trim());
@@ -904,17 +903,17 @@
             class PercentageProgressBar extends SurveyUI.ReactSurveyElement {
             render() {
             return (
-                    <div className="sv-progressbar-percentage">
-    <div className="sv-progressbar-percentage__title">
-        <span>{this.props.model.progressTitle}</span>
-                </div>
-                <div className="sv-progressbar-percentage__indicator">
-                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
-                </div>
-                <div className="sv-progressbar-percentage__value">
-                    <span>{this.props.model.progressValue + "%"}</span>
-                </div>
+            <div className="sv-progressbar-percentage">
+                <div className="sv-progressbar-percentage__title">
+                    <span>{this.props.model.progressTitle}</span>
             </div>
+            <div className="sv-progressbar-percentage__indicator">
+            <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
+            </div>
+            <div className="sv-progressbar-percentage__value">
+                <span>{this.props.model.progressValue + "%"}</span>
+                </div>
+                </div>
                     );
             }
             }
@@ -1266,15 +1265,15 @@
             return (
                     <div className="sv-progressbar-percentage">
                                                             <div className="sv-progressbar-percentage__title">
-            <span>{this.props.model.progressTitle}</span>
+                                                            <span>{this.props.model.progressTitle}</span>
+                                                    </div>
+                                                <div className="sv-progressbar-percentage__indicator">
+                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
                 </div>
-                <div className="sv-progressbar-percentage__indicator">
-                                        <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
-                        </div>
                 <div className="sv-progressbar-percentage__value">
-        <span>{this.props.model.progressValue + "%"}</span>
-                </div>
-            </div>
+                    <span>{this.props.model.progressValue + "%"}</span>
+        </div>
+        </div>
                     );
             }
             }

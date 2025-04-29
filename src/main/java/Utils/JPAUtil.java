@@ -24,6 +24,7 @@ import Enum.Visibilità_domanda;
 import static Utils.Utils.estraiEccezione;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -32,6 +33,7 @@ import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -585,16 +587,16 @@ public class JPAUtil {
         return Collections.emptyList();
     }
 
-    public List<Competenza> findAllCompetenzeBySottoCategoriaId(Long sottocategoria) {
+    public List<Competenza> findAllCompetenzeByCategoriaId(Long categoria) {
         EntityManager em2 = this.getEm();
 
         try {
 
             TypedQuery<Competenza> query = em2.createQuery(
-                    "SELECT c FROM Competenza c WHERE c.sottoCategoria.id = :sottocategoria_id",
+                    "SELECT c FROM Competenza c WHERE c.areeCompetenze.categoria.id = :categoria",
                     Competenza.class
             );
-            query.setParameter("sottocategoria_id", sottocategoria);
+            query.setParameter("categoria", categoria);
 
             return query.getResultList();
 
@@ -982,21 +984,42 @@ public class JPAUtil {
     }
 
     private void processaRisposte(Questionario questionario, Map<Long, Map<Long, int[]>> categoriaSottocategoriaStats) {
-        for (Domanda domanda : questionario.getDomande()) {
-            Long categoriaId = findCategoriaByDomanda(domanda);
-            Long competenzaId = findCompetenzaByDomanda(domanda);
+        try {
+            List<Domanda> domande = questionario.getDomande();
+            if (domande == null || domande.isEmpty()) {
+                LOGGER.warn("Nessuna domanda trovata per il questionario ID " + questionario.getId());
+                return;
+            }
 
-            if (categoriaId != null && competenzaId != null) {
-                categoriaSottocategoriaStats.putIfAbsent(categoriaId, new HashMap<>());
-                Map<Long, int[]> competenzaStats = categoriaSottocategoriaStats.get(categoriaId);
+            for (Domanda domanda : domande) {
+                Long domandaId = domanda.getId();
 
-                competenzaStats.putIfAbsent(competenzaId, new int[]{0, 0});
+                if (domandaId == null) {
+                    LOGGER.warn("Domanda ID nullo per una domanda nel questionario ID " + questionario.getId());
+                    continue;
+                }
 
-                competenzaStats.get(competenzaId)[0]++;
-                if (isRispostaCorretta(questionario, domanda)) {
-                    competenzaStats.get(competenzaId)[1]++;
+                boolean corretta = isRispostaCorretta(questionario, domanda);
+
+                Long categoriaId = findCategoriaByDomanda(domanda);
+                Long competenzaId = findCompetenzaByDomanda(domanda);
+
+                if (categoriaId != null && competenzaId != null) {
+                    categoriaSottocategoriaStats.putIfAbsent(categoriaId, new HashMap<>());
+                    Map<Long, int[]> competenzaStats = categoriaSottocategoriaStats.get(categoriaId);
+                    competenzaStats.putIfAbsent(competenzaId, new int[]{0, 0});
+
+                    int[] stats = competenzaStats.get(competenzaId);
+                    stats[1]++;
+                    if (corretta) {
+                        stats[0]++;
+                    }
+                } else {
+                    LOGGER.warn("Categoria o competenza non trovata per domanda ID " + domandaId);
                 }
             }
+        } catch (Exception e) {
+            LOGGER.error("Errore nel processo di gestione delle risposte per il questionario ID " + questionario.getId() + ": " + estraiEccezione(e));
         }
     }
 
@@ -1013,7 +1036,48 @@ public class JPAUtil {
             }
 
             Map<String, String> dettagliRisposta = risposte.get(idDomanda);
-            return dettagliRisposta.get("risposta").equals(dettagliRisposta.get("risposta corretta"));
+
+            if (dettagliRisposta.containsKey("risposta") && dettagliRisposta.containsKey("risposta corretta")) {
+                String rispostaUtente = dettagliRisposta.get("risposta").trim();
+                String rispostaCorretta = Utils.escapeHtmlAttribute(dettagliRisposta.get("risposta corretta").trim());
+
+                rispostaUtente = Utils.removeHtmlTags(rispostaUtente);
+                rispostaCorretta = Utils.removeHtmlTags(rispostaCorretta);
+
+                LOGGER.info("Controllando la risposta corretta per domanda ID " + idDomanda + ": Risposta dell'utente = " + rispostaUtente + ", Risposta corretta = " + rispostaCorretta);
+
+                return rispostaUtente.equalsIgnoreCase(rispostaCorretta);
+            }
+
+            if (dettagliRisposta.containsKey("risposta_testuale")) {
+                String[] rispostaUtenteArray = dettagliRisposta.get("risposta_testuale").split(",");
+                String[] rispostaCorrettaArray = Utils.escapeHtmlAttribute(dettagliRisposta.get("testi_risposte_corrette")).split(",");
+
+                List<String> rispostaUtenteList = Arrays.stream(rispostaUtenteArray)
+                        .map(r -> Utils.removeHtmlTags(r.trim()))
+                        .sorted()
+                        .collect(Collectors.toList());
+
+                List<String> risposteCorretteList = Arrays.stream(rispostaCorrettaArray)
+                        .map(r -> Utils.removeHtmlTags(r.trim()))
+                        .sorted()
+                        .collect(Collectors.toList());
+
+                LOGGER.info("Controllando la risposta corretta per domanda ID " + idDomanda + ": Risposta dell'utente = " + rispostaUtenteList + ", Risposta corretta = " + risposteCorretteList);
+
+                return rispostaUtenteList.equals(risposteCorretteList);
+            }
+
+            if (dettagliRisposta.containsKey("risposta_id") && dettagliRisposta.containsKey("risposte_corrette")) {
+                Set<String> rispostaUtenteSet = new HashSet<>(Arrays.asList(dettagliRisposta.get("risposta_id").split(",")));
+                Set<String> risposteCorretteSet = new HashSet<>(Arrays.asList(dettagliRisposta.get("risposte_corrette").split(",")));
+
+                LOGGER.info("Controllando la/e risposta/a corretta/e per domanda ID " + idDomanda + ": Risposta/i dell'utente = " + rispostaUtenteSet + ", Risposta/i corretta/e = " + risposteCorretteSet);
+
+                return rispostaUtenteSet.equals(risposteCorretteSet);
+            }
+
+            return false;
 
         } catch (Exception e) {
             LOGGER.error("Errore nell'estrazione della risposta corretta dalla domanda: " + estraiEccezione(e));
@@ -1033,8 +1097,66 @@ public class JPAUtil {
                 return null;
             }
 
-            return objectMapper.convertValue(risposteNode, new TypeReference<Map<String, Map<String, String>>>() {
+            if (risposteNode instanceof Map) {
+                Map<String, Object> risposteMap = (Map<String, Object>) risposteNode;
+
+                for (Map.Entry<String, Object> entry : risposteMap.entrySet()) {
+                    Map<String, Object> dettaglio = (Map<String, Object>) entry.getValue();
+
+                    if (dettaglio.containsKey("risposta_testuale")) {
+                        Object rispostaTestuale = dettaglio.get("risposta_testuale");
+
+                        if (rispostaTestuale instanceof List) {
+                            List<String> rispostaList = (List<String>) rispostaTestuale;
+                            dettaglio.put("risposta_testuale", String.join(", ", rispostaList));
+                        } else if (rispostaTestuale instanceof String) {
+                        } else {
+                            LOGGER.warn("Unexpected type for risposta_testuale: " + rispostaTestuale.getClass());
+                        }
+                    }
+
+                    if (dettaglio.containsKey("risposta_id")) {
+                        Object rispostaId = dettaglio.get("risposta_id");
+
+                        if (rispostaId instanceof List) {
+                            List<String> rispostaIdList = (List<String>) rispostaId;
+                            dettaglio.put("risposta_id", String.join(", ", rispostaIdList));
+                        } else if (rispostaId instanceof String) {
+                        } else {
+                            LOGGER.warn("Unexpected type for risposta_id: " + rispostaId.getClass());
+                        }
+                    }
+
+                    if (dettaglio.containsKey("risposte_corrette")) {
+                        Object risposteCorrette = dettaglio.get("risposte_corrette");
+
+                        if (risposteCorrette instanceof List) {
+                            List<String> risposteCorretteList = (List<String>) risposteCorrette;
+                            dettaglio.put("risposte_corrette", String.join(", ", risposteCorretteList));
+                        } else if (risposteCorrette instanceof String) {
+                        } else {
+                            LOGGER.warn("Unexpected type for risposte_corrette: " + risposteCorrette.getClass());
+                        }
+                    }
+
+                    if (dettaglio.containsKey("testi_risposte_corrette")) {
+                        Object testiRisposteCorrette = dettaglio.get("testi_risposte_corrette");
+
+                        if (testiRisposteCorrette instanceof List) {
+                            List<String> testiRisposteCorretteList = (List<String>) testiRisposteCorrette;
+                            dettaglio.put("testi_risposte_corrette", String.join(", ", testiRisposteCorretteList));
+                        } else if (testiRisposteCorrette instanceof String) {
+                        } else {
+                            LOGGER.warn("Unexpected type for testi_risposte_corrette: " + testiRisposteCorrette.getClass());
+                        }
+                    }
+                }
+            }
+
+            Map<String, Map<String, String>> risposte = objectMapper.convertValue(risposteNode, new TypeReference<Map<String, Map<String, String>>>() {
             });
+
+            return risposte;
 
         } catch (JsonProcessingException | IllegalArgumentException e) {
             LOGGER.error("Errore nell'estrazione delle risposte dal json: " + estraiEccezione(e));
