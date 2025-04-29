@@ -70,9 +70,9 @@
 
     </head>
     <body>
-        <%            String userId = session.getAttribute("userId").toString();
+        <%            String userIdParam = Utils.checkAttribute(session, "userId");
             JPAUtil jPAUtil = new JPAUtil();
-            Utente utente = jPAUtil.findUserByUserId(userId);
+            Utente utente = jPAUtil.findUserByUserId(userIdParam);
 
             Questionario utenteQuestionario = jPAUtil.findUtenteQuestionarioIdByUserId(utente.getId());
             if (utenteQuestionario != null) {

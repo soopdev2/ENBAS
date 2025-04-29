@@ -150,7 +150,7 @@
                                                             Nuovo questionario
                                                         </span>
                                                         <span class="badge">
-                                                            <%                                String userIdParam = session.getAttribute("userId").toString();
+                                                            <%                                String userIdParam = Utils.checkAttribute(session, "userId");
                                                                 Long userId = Utils.tryParseLong(userIdParam);
                                                                 JPAUtil jPAUtil = new JPAUtil();
                                                                 Questionario utente_questionario = jPAUtil.findUtenteQuestionarioIdByUserId(userId);

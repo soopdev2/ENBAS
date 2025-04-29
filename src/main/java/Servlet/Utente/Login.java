@@ -66,7 +66,7 @@ public class Login extends HttpServlet {
                 if (user != null) {
                     HttpSession session = request.getSession();
                     session.setAttribute("userId", user.getId());
-                    String userIdParam = session.getAttribute("userId").toString();
+                    String userIdParam = Utils.checkAttribute(session, "userId");
                     int userId = Utils.tryParseInt(userIdParam);
                     session.setAttribute("username", user.getUsername());
                     session.setAttribute("user", user);
@@ -118,7 +118,7 @@ public class Login extends HttpServlet {
         try {
             JPAUtil jPAUtil = new JPAUtil();
             HttpSession session = request.getSession();
-            String userIdParam = session.getAttribute("userId").toString();
+            String userIdParam = Utils.checkAttribute(session, "userId");
             Utente user = jPAUtil.findUserByUserId(userIdParam);
             LOGGER.info(user.getNome() + " " + user.getCognome() + " " + "Ha effettuato con successo il Logout!" + " in data:"
                     + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));

@@ -2,7 +2,7 @@
 <web-app version="6.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
     <servlet>
         <servlet-name>QuestionarioServlet</servlet-name>
-        <servlet-class>Servlet.QuestionarioServlet</servlet-class>
+        <servlet-class>Servlet.Questionario.QuestionarioServlet</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>Login</servlet-name>
@@ -10,7 +10,7 @@
     </servlet>
     <servlet>
         <servlet-name>VisualizzaQuestionario</servlet-name>
-        <servlet-class>Servlet.VisualizzaQuestionario</servlet-class>
+        <servlet-class>Servlet.Questionario.VisualizzaQuestionario</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>GestioneDomande</servlet-name>

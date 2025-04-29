@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
-package Servlet;
+package Servlet.Questionario;
 
 import Entity.AreeCompetenze;
 import Entity.Categoria;
@@ -147,6 +147,7 @@ public class QuestionarioServlet extends HttpServlet {
                                         utenteQuestionario.setDataDiAssegnazione(formattedDate);
 
                                         em.persist(utenteQuestionario);
+                                        logger.info("Questionario assegnato con successo all'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
                                     } else {
                                         if (!response.isCommitted()) {
                                             response.sendRedirect("AD_assegna_questionario.jsp?esito=KO3&codice=004");
@@ -393,7 +394,7 @@ public class QuestionarioServlet extends HttpServlet {
             em.getTransaction().begin();
 
             HttpSession session = request.getSession();
-            String userIdParam = session.getAttribute("userId").toString();
+            String userIdParam = Utils.checkAttribute(session, "userId");
             Long userId = Utils.tryParseLong(userIdParam);
             Questionario questionario = jPAUtil.findUtenteQuestionarioIdByUserId(userId);
 
@@ -402,6 +403,7 @@ public class QuestionarioServlet extends HttpServlet {
                 questionario.setDescrizione(Stato_questionario.PRESO_IN_CARICO);
                 em.merge(questionario);
                 em.getTransaction().commit();
+                logger.info("Questionario con id " + questionario.getId() + "  è stato preso in carico con successo dall'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
             }
         } catch (Exception e) {
             if (em != null && em.getTransaction().isActive()) {
@@ -463,6 +465,7 @@ public class QuestionarioServlet extends HttpServlet {
                 }
 
                 em.getTransaction().commit();
+                logger.info("Progressi questionario salvati con successo dall'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.sendRedirect("US_questionario.jsp?esito=OK&codice=002");
             } catch (Exception e) {
@@ -485,7 +488,7 @@ public class QuestionarioServlet extends HttpServlet {
 
     public static void SalvaQuestionario(HttpServletRequest request, HttpServletResponse response, Logger logger) throws ServletException, IOException {
         HttpSession session = request.getSession();
-        String userIdParam = session.getAttribute("userId").toString();
+        String userIdParam = Utils.checkAttribute(session, "userId");
         String questionarioIdParam = Utils.checkAttribute(session, "questionarioId");
 
         JPAUtil jPAUtil = new JPAUtil();
@@ -680,6 +683,7 @@ public class QuestionarioServlet extends HttpServlet {
                 em.merge(questionario);
                 em.getTransaction().commit();
             }
+            logger.info("Questionario con id " + questionario.getId() + " salvato con successo " + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
 
             return questionario;
         } catch (Exception e) {
@@ -806,7 +810,7 @@ public class QuestionarioServlet extends HttpServlet {
             String data_fine = request.getParameter("data_fine");
             String tipo_questionario = request.getParameter("tipo_questionario");
             HttpSession session = request.getSession();
-            String userIdParam = session.getAttribute("userId").toString();
+            String userIdParam = Utils.checkAttribute(session, "userId");
             Long userId = Utils.tryParseLong(userIdParam);
 
             long totalRecords = countUtenteQuestionariUser(userId, stato_questionario_select, data_inizio, data_fine, tipo_questionario, logger);
