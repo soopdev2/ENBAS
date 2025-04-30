@@ -186,6 +186,9 @@
                                                 <li class="nav-item"><a class="nav-link" href="AD_archivio.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-box"></use></svg>
                                                             Archivio
                                                         </span></a></li>
+                                                <li class="nav-item"><a class="nav-link" href="AD_statistiche.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-chart-line"></use></svg>
+                                                            Statistiche
+                                                        </span></a></li>
                                             </ul>
                                         </div>
                                     </div>

@@ -44,7 +44,7 @@ public class ControllaDigicomp {
 
                 if (livelloCorrente >= 5) {
                     LOGGER.info("L'utente con ID " + utente.getId() + " ha già completato il livello massimo.");
-                    jpaUtil.createExcel(ultimoQuestionario);
+                    //jpaUtil.createExcel(ultimoQuestionario);
                     continue;
                 }
 
@@ -138,7 +138,7 @@ public class ControllaDigicomp {
                     jpaUtil.assegnaNuovoQuestionario(ultimoQuestionario, livelloCorrente);
                 } else {
                     LOGGER.info("Il questionario con ID " + ultimoQuestionario.getId() + " per l'utente " + utente.getId() + " non ha superato il livello " + livelloCorrente);
-                    jpaUtil.createExcel(ultimoQuestionario); // puoi sbloccarlo se vuoi generare Excel anche in caso di fallimento
+                    //jpaUtil.createExcel(ultimoQuestionario); // puoi sbloccarlo se vuoi generare Excel anche in caso di fallimento
                     for (String errore : domandeSbagliate) {
                         LOGGER.info(errore);
                     }

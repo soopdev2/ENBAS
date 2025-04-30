@@ -180,6 +180,9 @@
                                                 <li class="nav-item"><a class="nav-link" href="AD_archivio.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-box"></use></svg>
                                                             Archivio
                                                         </span></a></li>
+                                                <li class="nav-item"><a class="nav-link" href="AD_statistiche.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-chart-line"></use></svg>
+                                                            Statistiche
+                                                        </span></a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -198,7 +201,7 @@
             <br>
 
             <div class="row">
-                <div class="col-12 col-lg-4">
+                <div class="col-12 col-lg-6">
                     <!--start card-->
                     <div class="card-wrapper">
                         <div class="card card-bg mb-6">
@@ -219,7 +222,7 @@
                     </div>
                 </div>
 
-                <div class="col-12 col-lg-4">
+                <div class="col-12 col-lg-6">
                     <div class="card-wrapper">
                         <div class="card card-bg mb-6">
                             <div class="card-body">
@@ -240,7 +243,11 @@
                     </div>
                 </div>
 
-                <div class="col-12 col-lg-4">
+            </div>
+            <br>
+            <div class="row">
+
+                <div class="col-12 col-lg-6">
                     <div class="card-wrapper">
                         <div class="card card-bg mb-6">
                             <div class="card-body">
@@ -259,89 +266,109 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-12 col-lg-6">
+                    <div class="card-wrapper">
+                        <div class="card card-bg mb-6">
+                            <div class="card-body">
+                                <div class="categoryicon-top">
+                                    <svg class="icon"><use href="dist/svg/sprites.svg#it-chart-line"></use></svg>
+                                    <span class="badge">
+                                        <span class="badge bg-primary">
+                                            Statistiche
+                                        </span>
+                                    </span>
+                                </div>
+                                <h5 class="card-title h5">Statistiche</h5>
+                                <p class="card-text font-serif">Genera statistiche per ogni utente.</p>
+                                <a class="simple-link" href="AD_statistiche.jsp">Clicca qui <span class="visually-hidden"></span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <br>
-        <br>
+    <br>
+    <br>
 
 
-        <footer class="it-footer">
-            <div class="it-footer-main">
-                <div class="container">
-                    <section>
-                        <div class="row clearfix">
-                            <div class="col-sm-12">
-                                <div class="it-brand-wrapper">
-                                    <a href="#" data-focus-mouse="false">
-                                        <!--                                        <svg class="icon"><use xlink:href="dist/svg/sprites.svg#it-code-circle"></use></svg>-->
-                                        <div class="it-brand-text">
-                                            <h2></h2>
-                                            <h3 class="d-none d-md-block"></h3>
-                                        </div>
-                                    </a>
-                                </div>
+    <footer class="it-footer">
+        <div class="it-footer-main">
+            <div class="container">
+                <section>
+                    <div class="row clearfix">
+                        <div class="col-sm-12">
+                            <div class="it-brand-wrapper">
+                                <a href="#" data-focus-mouse="false">
+                                    <!--                                        <svg class="icon"><use xlink:href="dist/svg/sprites.svg#it-code-circle"></use></svg>-->
+                                    <div class="it-brand-text">
+                                        <h2></h2>
+                                        <h3 class="d-none d-md-block"></h3>
+                                    </div>
+                                </a>
                             </div>
                         </div>
-                    </section>
-                    <section class="py-4">
-                        <div class="row">
-                            <div class="col-lg-4 col-md-4 pb-2">
-                                <h4></h4>
-                                <p>
-                                    <strong></strong><br>
-                                </p>
-                                <div class="link-list-wrapper">
-                                    <ul class="footer-list link-list clearfix">
-                                        <li><a class="list-item" href="#"></a></li>
-                                        <li>
-                                            <a class="list-item" href="#"></a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-md-4 pb-2">
-                                <h4></h4>
-                            </div>
-                            <div class="col-lg-4 col-md-4 pb-2">
-                                <div class="pb-2">
-                                    <!--                                    <h4>Seguici su</h4>
-                                                                        <ul class="list-inline text-left social">
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-designers-italia"></use></svg><span class="visually-hidden">Designers Italia (link esterno)</span></a>
-                                                                            </li>
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-twitter"></use></svg><span class="visually-hidden">X (link esterno)</span></a>
-                                                                            </li>
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-medium"></use></svg><span class="visually-hidden">Medium (link esterno)</span></a>
-                                                                            </li>
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-behance"></use></svg><span class="visually-hidden">Behance (link esterno)</span></a>
-                                                                            </li>
-                                                                        </ul>-->
-                                </div>
+                    </div>
+                </section>
+                <section class="py-4">
+                    <div class="row">
+                        <div class="col-lg-4 col-md-4 pb-2">
+                            <h4></h4>
+                            <p>
+                                <strong></strong><br>
+                            </p>
+                            <div class="link-list-wrapper">
+                                <ul class="footer-list link-list clearfix">
+                                    <li><a class="list-item" href="#"></a></li>
+                                    <li>
+                                        <a class="list-item" href="#"></a>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
-                    </section>
-                </div>
+                        <div class="col-lg-4 col-md-4 pb-2">
+                            <h4></h4>
+                        </div>
+                        <div class="col-lg-4 col-md-4 pb-2">
+                            <div class="pb-2">
+                                <!--                                    <h4>Seguici su</h4>
+                                                                    <ul class="list-inline text-left social">
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-designers-italia"></use></svg><span class="visually-hidden">Designers Italia (link esterno)</span></a>
+                                                                        </li>
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-twitter"></use></svg><span class="visually-hidden">X (link esterno)</span></a>
+                                                                        </li>
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-medium"></use></svg><span class="visually-hidden">Medium (link esterno)</span></a>
+                                                                        </li>
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-behance"></use></svg><span class="visually-hidden">Behance (link esterno)</span></a>
+                                                                        </li>
+                                                                    </ul>-->
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div class="it-footer-small-prints clearfix">
-                <div class="container">
-                    <!-- <h3 class="visually-hidden">Sezione Link Utili</h3> -->
-                    <ul class="it-footer-small-prints-list list-inline mb-0 d-flex flex-column flex-md-row">
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="https://form.agid.gov.it/view/xyz"><span class="visually-hidden"></span></a></li>
-                    </ul>
-                </div>
+        </div>
+        <div class="it-footer-small-prints clearfix">
+            <div class="container">
+                <!-- <h3 class="visually-hidden">Sezione Link Utili</h3> -->
+                <ul class="it-footer-small-prints-list list-inline mb-0 d-flex flex-column flex-md-row">
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="https://form.agid.gov.it/view/xyz"><span class="visually-hidden"></span></a></li>
+                </ul>
             </div>
-        </footer>
+        </div>
+    </footer>
 
 
-        <script src="dist/assets/js/bootstrap-italia.bundle.min.js"></script>
-        <script src="dist/assets/js/custom/logout.js"></script>
-    </body>
+    <script src="dist/assets/js/bootstrap-italia.bundle.min.js"></script>
+    <script src="dist/assets/js/custom/logout.js"></script>
+</body>
 </html>

@@ -73,6 +73,7 @@
         <%            String userIdParam = Utils.checkAttribute(session, "userId");
             JPAUtil jPAUtil = new JPAUtil();
             Utente utente = jPAUtil.findUserByUserId(userIdParam);
+            Long userId = utente.getId();
 
             Questionario utenteQuestionario = jPAUtil.findUtenteQuestionarioIdByUserId(utente.getId());
             if (utenteQuestionario != null) {
@@ -903,17 +904,17 @@
             class PercentageProgressBar extends SurveyUI.ReactSurveyElement {
             render() {
             return (
-            <div className="sv-progressbar-percentage">
-                <div className="sv-progressbar-percentage__title">
-                    <span>{this.props.model.progressTitle}</span>
-            </div>
-            <div className="sv-progressbar-percentage__indicator">
-            <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
-            </div>
-            <div className="sv-progressbar-percentage__value">
-                <span>{this.props.model.progressValue + "%"}</span>
+                    <div className="sv-progressbar-percentage">
+    <div className="sv-progressbar-percentage__title">
+        <span>{this.props.model.progressTitle}</span>
                 </div>
+                <div className="sv-progressbar-percentage__indicator">
+                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
                 </div>
+                <div className="sv-progressbar-percentage__value">
+                    <span>{this.props.model.progressValue + "%"}</span>
+                </div>
+            </div>
                     );
             }
             }
@@ -1265,15 +1266,15 @@
             return (
                     <div className="sv-progressbar-percentage">
                                                             <div className="sv-progressbar-percentage__title">
-                                                            <span>{this.props.model.progressTitle}</span>
-                                                    </div>
-                                                <div className="sv-progressbar-percentage__indicator">
-                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
+            <span>{this.props.model.progressTitle}</span>
                 </div>
-                <div className="sv-progressbar-percentage__value">
-                    <span>{this.props.model.progressValue + "%"}</span>
-        </div>
-        </div>
+                <div className="sv-progressbar-percentage__indicator">
+                                            <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
+                            </div>
+                        <div className="sv-progressbar-percentage__value">
+            <span>{this.props.model.progressValue + "%"}</span>
+                </div>
+            </div>
                     );
             }
             }

@@ -1,6 +1,6 @@
 <%-- 
-    Document   : AD_archivio
-    Created on : 21 gen 2025, 11:08:11
+    Document   : AD_statistiche
+    Created on : 30 apr 2025, 09:30:13
     Author     : Salvatore
 --%>
 
@@ -33,7 +33,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Archivio</title>
+        <title>Statistiche</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -41,6 +41,8 @@
         <link rel="stylesheet" href="dist/assets/css/custom/global.css"/>
         <link href='https://fonts.googleapis.com/css?family=Titillium Web' rel='stylesheet'>
         <link rel="stylesheet" href="dist/assets/css/external/dataTables.bootstrap5.css"/>
+        <link rel="stylesheet" href="dist/assets/css/external/select2-bootstrap-5-theme.min.css"/>
+        <link rel="stylesheet" href="dist/assets/css/external/select2.min.css"/>
     </head>
     <body>
         <header class="it-header-wrapper">
@@ -179,10 +181,10 @@
                                                         </div>
                                                     </div>
                                                 </li>
-                                                <li class="nav-item active"><a class="nav-link active" href="AD_archivio.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-box"></use></svg>
+                                                <li class="nav-item"><a class="nav-link" href="AD_archivio.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-box"></use></svg>
                                                             Archivio
                                                         </span></a></li>
-                                                <li class="nav-item"><a class="nav-link" href="AD_statistiche.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-chart-line"></use></svg>
+                                                <li class="nav-item active"><a class="nav-link active" href="AD_statistiche.jsp"><span> <svg class="icon icon-white align-bottom"><use href="dist/svg/sprites.svg#it-chart-line"></use></svg>
                                                             Statistiche
                                                         </span></a></li>
                                             </ul>
@@ -206,192 +208,181 @@
                     <div class="card card-header text-center">
                         <br>
                         <h4 class="card-title" style="font-weight: normal">
-                            Archivio questionari
+                            Statistiche utenti
                         </h4>
                     </div>
 
-                    <div class="container-fluid">
+                    <div class="container">
                         <div class="card">
                             <div class="card-body">
                                 <div class="row w-100" style="display: flex; justify-content: center;">
 
-                                    <div class="col-md-6">
-                                        <label class="text-primary active" for="data_inizio">Data assegnazione da</label>
-                                        <input type="date" class="form-control" id="data_inizio" name="data_inizio"> 
-
-
-                                        <label class="text-primary active" for="data_fine">Data assegnazione a</label>
-                                        <input type="date" class="form-control" id="data_fine" name="data_fine">
-
-                                    </div>
-                                    <div class="col">
-
-                                        <label class="text-primary active" for="tipo_questionario">Tipo questionario</label>
-                                        <select name="tipo_questionario" id="tipo_questionario" class="form-control border">
-                                            <option value="Tutti" selected>TUTTI</option>
-                                            <option value="Modello_predefinito">Modello Predefinito</option>
-                                            <option value="Categoria">Categoria</option>
-                                            <option value="DIGICOMP">DIGICOMP</option>
-                                        </select>
-
-                                        <label class="text-primary active" for="utente_select">Seleziona utente</label>
-                                        <select name="utente_select" id="utente_select" class="form-control border">
-                                            <option value="Tutti" selected>TUTTI</option>
-                                            <%                                                JPAUtil jPAUtil = new JPAUtil();
-                                                List<Utente> list_utenti = jPAUtil.findAllUtenti();
-                                                for (Utente u : list_utenti) {
-                                            %>
-                                            <option value="<%= u.getId()%>"><%= u.getNome() + " " + u.getCognome()%></option>
-                                            <%
-                                                }
-                                            %>
-                                        </select>
-
-                                        <label class="text-primary active" for="stato_questionario_select">Seleziona stato questionario</label>
-                                        <select name="stato_questionario_select" id="stato_questionario_select" class="form-control border">
-                                            <option value="Tutti" selected>TUTTI</option>
-                                            <option value="<%=Stato_questionario.ASSEGNATO.name()%>"><%=Stato_questionario.ASSEGNATO.name()%></option>
-                                            <option value="<%=Stato_questionario.PRESO_IN_CARICO.name()%>"><%=Stato_questionario.PRESO_IN_CARICO.name()%></option>
-                                            <option value="<%=Stato_questionario.DA_COMPLETARE.name()%>"><%=Stato_questionario.DA_COMPLETARE.name()%></option>
-                                            <option value="<%=Stato_questionario.COMPLETATO.name()%>"><%=Stato_questionario.COMPLETATO.name()%></option>
-                                        </select>
-
-                                    </div>
-
+                                    <label class="text-primary active" for="utente_select">Seleziona utente</label>
+                                    <select name="utente_select" id="utente_select" class="form-control border">
+                                        <option value="Tutti" selected>TUTTI</option>
+                                        <%                                                JPAUtil jPAUtil = new JPAUtil();
+                                            List<Utente> list_utenti = jPAUtil.findAllUtenti();
+                                            for (Utente u : list_utenti) {
+                                        %>
+                                        <option value="<%= u.getId()%>"><%= u.getNome() + " " + u.getCognome()%></option>
+                                        <%
+                                            }
+                                        %>
+                                    </select>
 
                                 </div>
-                                <br>
 
-                                <div data-datatable="true" data-datatable-page-size="5" data-datatable-state-save="true" id="archivo">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover table-striped" id="archivio">
-                                            <thead>
-                                                <tr class="text-primary">
-                                                    <th class="text-center">ID</th>
-                                                    <th>Data di assegnazione</th>
-                                                    <th>Descrizione</th>
-                                                    <th>Tipo</th>
-                                                    <th>Livello/Descrizione</th>
-                                                    <th>Data completamento</th>
-                                                    <th>Utente</th>
-                                                    <th>Azione</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                            </tbody>
-                                        </table>
-                                    </div>
+
+                            </div>
+                            <br>
+
+                            <div data-datatable="true" data-datatable-page-size="5" data-datatable-state-save="true" id="utenti_table">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped" id="utenti">
+                                        <thead>
+                                            <tr class="text-primary">
+                                                <th>ID</th>
+                                                <th>Nome</th>
+                                                <th>Cognome</th>
+                                                <th>Età</th>
+                                                <th>Indirizzo</th>
+                                                <th>Ruolo</th>
+                                                <th>Azione</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div class="card-footer d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center gap-2">
-                                    Mostra
-                                    <select class="form-select form-select-sm w-auto" id="pageSize" name="perpage">
-                                        <option value="5">5</option>
-                                        <option value="10">10</option>
-                                        <option value="25">25</option>
-                                    </select>
-                                    per pagina
-                                </div>
-                                <div class="d-flex align-items-center gap-4">
-                                    <span id="datatable-info"></span>
-                                    <div class="pagination" id="datatable-pagination">
-                                    </div>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                Mostra
+                                <select class="form-select form-select-sm w-auto" id="pageSize" name="perpage">
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                </select>
+                                per pagina
+                            </div>
+                            <div class="d-flex align-items-center gap-4">
+                                <span id="datatable-info"></span>
+                                <div class="pagination" id="datatable-pagination">
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
 
+            </div>
+        </div>
+    </div>
+
+    <br>
+
+
+    <footer class="it-footer">
+        <div class="it-footer-main">
+            <div class="container">
+                <section>
+                    <div class="row clearfix">
+                        <div class="col-sm-12">
+                            <div class="it-brand-wrapper">
+                                <a href="#" data-focus-mouse="false">
+                                    <!--                                        <svg class="icon"><use xlink:href="dist/svg/sprites.svg#it-code-circle"></use></svg>-->
+                                    <div class="it-brand-text">
+                                        <h2></h2>
+                                        <h3 class="d-none d-md-block"></h3>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="py-4">
+                    <div class="row">
+                        <div class="col-lg-4 col-md-4 pb-2">
+                            <h4></h4>
+                            <p>
+                                <strong></strong><br>
+                            </p>
+                            <div class="link-list-wrapper">
+                                <ul class="footer-list link-list clearfix">
+                                    <li><a class="list-item" href="#"></a></li>
+                                    <li>
+                                        <a class="list-item" href="#"></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-4 pb-2">
+                            <h4></h4>
+                        </div>
+                        <div class="col-lg-4 col-md-4 pb-2">
+                            <div class="pb-2">
+                                <!--                                    <h4>Seguici su</h4>
+                                                                    <ul class="list-inline text-left social">
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-designers-italia"></use></svg><span class="visually-hidden">Designers Italia (link esterno)</span></a>
+                                                                        </li>
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-twitter"></use></svg><span class="visually-hidden">X (link esterno)</span></a>
+                                                                        </li>
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-medium"></use></svg><span class="visually-hidden">Medium (link esterno)</span></a>
+                                                                        </li>
+                                                                        <li class="list-inline-item">
+                                                                            <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-behance"></use></svg><span class="visually-hidden">Behance (link esterno)</span></a>
+                                                                        </li>
+                                                                    </ul>-->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+        <div class="it-footer-small-prints clearfix">
+            <div class="container">
+                <!-- <h3 class="visually-hidden">Sezione Link Utili</h3> -->
+                <ul class="it-footer-small-prints-list list-inline mb-0 d-flex flex-column flex-md-row">
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="#"></a></li>
+                    <li class="list-inline-item"><a href="https://form.agid.gov.it/view/xyz"><span class="visually-hidden"></span></a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="esitoModal" tabindex="-1" aria-labelledby="esitoModalLabel" aria-hidden="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" id="modal-header">
+                    <h5 class="modal-title" id="esitoModalLabel">Esito Operazione</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="esitoModalBody">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="esitoModalButton" class="btn" data-bs-dismiss="modal">Chiudi</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <br>
+    <script src="dist/assets/js/bootstrap-italia.bundle.min.js"></script>
+    <script src="dist/assets/js/external/jquery-3.7.1.js"></script>
+    <script src="dist/assets/js/external/dataTables.js"></script>
+    <script src="dist/assets/js/external/dataTables.bootstrap5.js"></script>
+    <script src="dist/assets/js/external/date-eu.js"></script>
+    <script src="dist/assets/js/external/select2.min.js"></script>
 
-
-        <footer class="it-footer">
-            <div class="it-footer-main">
-                <div class="container">
-                    <section>
-                        <div class="row clearfix">
-                            <div class="col-sm-12">
-                                <div class="it-brand-wrapper">
-                                    <a href="#" data-focus-mouse="false">
-                                        <!--                                        <svg class="icon"><use xlink:href="dist/svg/sprites.svg#it-code-circle"></use></svg>-->
-                                        <div class="it-brand-text">
-                                            <h2></h2>
-                                            <h3 class="d-none d-md-block"></h3>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                    <section class="py-4">
-                        <div class="row">
-                            <div class="col-lg-4 col-md-4 pb-2">
-                                <h4></h4>
-                                <p>
-                                    <strong></strong><br>
-                                </p>
-                                <div class="link-list-wrapper">
-                                    <ul class="footer-list link-list clearfix">
-                                        <li><a class="list-item" href="#"></a></li>
-                                        <li>
-                                            <a class="list-item" href="#"></a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="col-lg-4 col-md-4 pb-2">
-                                <h4></h4>
-                            </div>
-                            <div class="col-lg-4 col-md-4 pb-2">
-                                <div class="pb-2">
-                                    <!--                                    <h4>Seguici su</h4>
-                                                                        <ul class="list-inline text-left social">
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-designers-italia"></use></svg><span class="visually-hidden">Designers Italia (link esterno)</span></a>
-                                                                            </li>
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-twitter"></use></svg><span class="visually-hidden">X (link esterno)</span></a>
-                                                                            </li>
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-medium"></use></svg><span class="visually-hidden">Medium (link esterno)</span></a>
-                                                                            </li>
-                                                                            <li class="list-inline-item">
-                                                                                <a class="p-2 text-white" href="#"><svg class="icon icon-sm icon-white align-top"><use xlink:href="dist/svg/sprites.svg#it-behance"></use></svg><span class="visually-hidden">Behance (link esterno)</span></a>
-                                                                            </li>
-                                                                        </ul>-->
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-            </div>
-            <div class="it-footer-small-prints clearfix">
-                <div class="container">
-                    <!-- <h3 class="visually-hidden">Sezione Link Utili</h3> -->
-                    <ul class="it-footer-small-prints-list list-inline mb-0 d-flex flex-column flex-md-row">
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="#"></a></li>
-                        <li class="list-inline-item"><a href="https://form.agid.gov.it/view/xyz"><span class="visually-hidden"></span></a></li>
-                    </ul>
-                </div>
-            </div>
-        </footer>
-
-        <script src="dist/assets/js/bootstrap-italia.bundle.min.js"></script>
-        <script src="dist/assets/js/external/jquery-3.7.1.js"></script>
-        <script src="dist/assets/js/external/dataTables.js"></script>
-        <script src="dist/assets/js/external/dataTables.bootstrap5.js"></script>
-        <script src="dist/assets/js/external/date-eu.js"></script>
-
-        <script src="dist/assets/js/custom/ad_archivio.js"></script>
-        <script src="dist/assets/js/custom/logout.js"></script>
-    </body>
+    <script src="dist/assets/js/custom/ad_statistiche.js"></script>
+    <script src="dist/assets/js/custom/globalModal.js"></script>
+    <script src="dist/assets/js/custom/logout.js"></script>
+</body>
 </html>
-

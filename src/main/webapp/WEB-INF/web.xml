@@ -16,6 +16,10 @@
         <servlet-name>GestioneDomande</servlet-name>
         <servlet-class>Servlet.Domande.GestioneDomande</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>StatisticheServlet</servlet-name>
+        <servlet-class>Servlet.Statistiche.StatisticheServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>QuestionarioServlet</servlet-name>
         <url-pattern>/QuestionarioServlet</url-pattern>
@@ -31,6 +35,10 @@
     <servlet-mapping>
         <servlet-name>GestioneDomande</servlet-name>
         <url-pattern>/GestioneDomande</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StatisticheServlet</servlet-name>
+        <url-pattern>/StatisticheServlet</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>

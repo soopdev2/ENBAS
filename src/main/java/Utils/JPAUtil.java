@@ -24,13 +24,13 @@ import Enum.Visibilità_domanda;
 import static Utils.Utils.estraiEccezione;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
+import jakarta.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -942,7 +942,7 @@ public class JPAUtil {
         );
     }
 
-    public void createExcel(Questionario ultimoQuestionario) {
+    public void createExcel(Questionario ultimoQuestionario, HttpServletResponse response) {
         EntityManager em = this.getEm();
         try {
             List<Long> utentiIds = ultimoQuestionario.getUtenti()
@@ -960,7 +960,7 @@ public class JPAUtil {
             }
 
             Utils utils = new Utils();
-            utils.generaExcel(categoriaSottocategoriaStats);
+            utils.generaExcel(categoriaSottocategoriaStats, response);
 
         } catch (Exception e) {
             LOGGER.error("Errore nella generazione del file Excel: " + estraiEccezione(e));

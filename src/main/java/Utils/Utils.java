@@ -7,6 +7,8 @@ package Utils;
 import Entity.Categoria;
 import Entity.Competenza;
 import Entity.SottoCategoria;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -119,125 +121,99 @@ public class Utils {
 
     public static final ResourceBundle config = ResourceBundle.getBundle("conf.config");
 
-    public void generaExcel(Map<Long, Map<Long, int[]>> categoriaSottocategoriaStats) {
+    public void generaExcel(Map<Long, Map<Long, int[]>> categoriaSottocategoriaStats, HttpServletResponse response) {
         int maxLength = 40;
 
-        for (Map.Entry<Long, Map<Long, int[]>> entry : categoriaSottocategoriaStats.entrySet()) {
-            Long categoriaId = entry.getKey();
-            Map<Long, int[]> sottocategoriaStats = entry.getValue();
-            System.out.println("Categoria ID: " + categoriaId);
-            for (Map.Entry<Long, int[]> subEntry : sottocategoriaStats.entrySet()) {
-                Long competenzaId = subEntry.getKey();
-                int[] stats = subEntry.getValue();
-                System.out.println("  Competenza ID: " + competenzaId + " - Domande Totali: " + stats[1] + ", Risposte Corrette: " + stats[0]);
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Statistiche Questionari");
+
+            Row headerRow = sheet.createRow(0);
+            String[] colonne = {"Categoria", "Competenza", "Abilità/Conoscenze", "Livello", "Domande totali", "Risposte corrette", "Risposte errate", "Percentuale"};
+
+            for (int i = 0; i < colonne.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(colonne[i]);
+                cell.setCellStyle(creaStileIntestazione(workbook));
             }
-        }
 
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Statistiche Questionari");
+            int rowNum = 1;
+            int totaleDomande = 0;
+            int totaleCorrette = 0;
 
-        Row headerRow = sheet.createRow(0);
-        String[] colonne = {"Categoria", "Competenza", "Abilità/Conoscenze", "Livello", "Domande totali", "Risposte corrette", "Risposte errate", "Percentuale"};
+            JPAUtil jPAUtil = new JPAUtil();
 
-        for (int i = 0; i < colonne.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(colonne[i]);
-            cell.setCellStyle(creaStileIntestazione(workbook));
-        }
+            for (Map.Entry<Long, Map<Long, int[]>> entry : categoriaSottocategoriaStats.entrySet()) {
+                Long categoriaId = entry.getKey();
+                Categoria categoria = jPAUtil.findCategoriaById(categoriaId);
+                int categoriaTotale = 0;
+                int categoriaCorrette = 0;
 
-        int rowNum = 1;
-        int totaleDomande = 0;
-        int totaleCorrette = 0;
+                Map<Long, int[]> statsPerCompetenza = entry.getValue();
 
-        JPAUtil jPAUtil = new JPAUtil();
+                for (Map.Entry<Long, int[]> competenzaEntry : statsPerCompetenza.entrySet()) {
+                    Long competenzaId = competenzaEntry.getKey();
+                    Competenza competenza = jPAUtil.findCompetenzaById(competenzaId);
 
-        for (Map.Entry<Long, Map<Long, int[]>> entry : categoriaSottocategoriaStats.entrySet()) {
-            Long categoriaId = entry.getKey();
-            Categoria categoria = jPAUtil.findCategoriaById(categoriaId);
-            int categoriaTotale = 0;
-            int categoriaCorrette = 0;
+                    Row row = sheet.createRow(rowNum++);
 
-            List<Competenza> tutteLeCompetenze = jPAUtil.findAllCompetenzeByCategoriaId(categoriaId);
-            for (Competenza competenza : tutteLeCompetenze) {
-                Row row = sheet.createRow(rowNum++);
-                Long competenzaId = competenza.getId();
+                    int risposteCorrette = competenzaEntry.getValue()[0];
+                    int domandeTotali = competenzaEntry.getValue()[1];
+                    int risposteSbagliate = domandeTotali - risposteCorrette;
+                    double percentuale = domandeTotali > 0 ? ((double) risposteCorrette / domandeTotali) * 100 : 0;
 
-                int domandeTotali = 0;
-                int risposteCorrette = 0;
-                if (entry.getValue().containsKey(competenzaId)) {
-                    domandeTotali = entry.getValue().get(competenzaId)[1];
-                    risposteCorrette = entry.getValue().get(competenzaId)[0];
+                    categoriaTotale += domandeTotali;
+                    categoriaCorrette += risposteCorrette;
+
+                    String areaCompetenza = truncateString(competenza.getAreeCompetenze().getNome(), maxLength);
+                    String descrizioneCompetenza = truncateString(competenza.getDescrizione(), maxLength);
+
+                    row.createCell(0).setCellValue(categoria.getNome());
+                    row.createCell(1).setCellValue(areaCompetenza);
+                    row.createCell(2).setCellValue(descrizioneCompetenza);
+                    row.createCell(3).setCellValue(competenza.getLivello());
+                    row.createCell(4).setCellValue(domandeTotali);
+                    row.createCell(5).setCellValue(risposteCorrette);
+                    row.createCell(6).setCellValue(risposteSbagliate);
+                    row.createCell(7).setCellValue(String.format("%.2f%%", percentuale));
                 }
 
-                int risposteSbagliate = domandeTotali - risposteCorrette;
-                double percentuale = domandeTotali > 0 ? ((double) risposteCorrette / domandeTotali) * 100 : 0;
+                Row categoriaRow = sheet.createRow(rowNum++);
+                int risposteSbagliateCategoria = categoriaTotale - categoriaCorrette;
+                double percentualeCategoria = categoriaTotale > 0 ? ((double) categoriaCorrette / categoriaTotale) * 100 : 0;
 
-                categoriaTotale += domandeTotali;
-                categoriaCorrette += risposteCorrette;
+                totaleDomande += categoriaTotale;
+                totaleCorrette += categoriaCorrette;
 
-                String areaCompetenza = competenza.getAreeCompetenze().getNome();
-                String descrizioneCompetenza = competenza.getDescrizione();
-
-                areaCompetenza = truncateString(areaCompetenza, maxLength);
-                descrizioneCompetenza = truncateString(descrizioneCompetenza, maxLength);
-
-                row.createCell(0).setCellValue(categoria.getNome());
-                row.createCell(1).setCellValue(areaCompetenza);
-                row.createCell(2).setCellValue(descrizioneCompetenza);
-                row.createCell(3).setCellValue(competenza.getLivello());
-
-                row.createCell(4).setCellValue(domandeTotali);
-                row.createCell(5).setCellValue(risposteCorrette);
-                row.createCell(6).setCellValue(risposteSbagliate);
-                row.createCell(7).setCellValue(String.format("%.2f%%", percentuale));
+                categoriaRow.createCell(0).setCellValue("Totale " + categoria.getNome());
+                categoriaRow.createCell(4).setCellValue(categoriaTotale);
+                categoriaRow.createCell(5).setCellValue(categoriaCorrette);
+                categoriaRow.createCell(6).setCellValue(risposteSbagliateCategoria);
+                categoriaRow.createCell(7).setCellValue(String.format("%.2f%%", percentualeCategoria));
             }
 
-            Row categoriaRow = sheet.createRow(rowNum++);
-            int risposteSbagliateCategoria = categoriaTotale - categoriaCorrette;
-            double percentualeCategoria = categoriaTotale > 0 ? ((double) categoriaCorrette / categoriaTotale) * 100 : 0;
+            Row totalRow = sheet.createRow(rowNum++);
+            double percentualeTotale = totaleDomande > 0 ? ((double) totaleCorrette / totaleDomande) * 100 : 0;
 
-            totaleDomande += categoriaTotale;
-            totaleCorrette += categoriaCorrette;
+            totalRow.createCell(0).setCellValue("Totale Generale");
+            totalRow.createCell(4).setCellValue(totaleDomande);
+            totalRow.createCell(5).setCellValue(totaleCorrette);
+            totalRow.createCell(6).setCellValue(totaleDomande - totaleCorrette);
+            totalRow.createCell(7).setCellValue(String.format("%.2f%%", percentualeTotale));
 
-            categoriaRow.createCell(0).setCellValue("Totale " + categoria.getNome());
-            categoriaRow.createCell(1).setCellValue("");
-            categoriaRow.createCell(2).setCellValue("");
-            categoriaRow.createCell(3).setCellValue("");
-            categoriaRow.createCell(4).setCellValue(categoriaTotale);
-            categoriaRow.createCell(5).setCellValue(categoriaCorrette);
-            categoriaRow.createCell(6).setCellValue(risposteSbagliateCategoria);
-            categoriaRow.createCell(7).setCellValue(String.format("%.2f%%", percentualeCategoria));
-        }
+            for (int i = 0; i < colonne.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
 
-        Row totalRow = sheet.createRow(rowNum++);
-        double percentualeTotale = totaleDomande > 0 ? ((double) totaleCorrette / totaleDomande) * 100 : 0;
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=\"statistiche.xlsx\"");
 
-        totalRow.createCell(0).setCellValue("Totale Generale");
-        totalRow.createCell(1).setCellValue("");
-        totalRow.createCell(2).setCellValue("");
-        totalRow.createCell(3).setCellValue("");
-        totalRow.createCell(4).setCellValue(totaleDomande);
-        totalRow.createCell(5).setCellValue(totaleCorrette);
-        totalRow.createCell(6).setCellValue(totaleDomande - totaleCorrette);
-        totalRow.createCell(7).setCellValue(String.format("%.2f%%", percentualeTotale));
+            try (ServletOutputStream out = response.getOutputStream()) {
+                workbook.write(out);
+                out.flush();
+            }
 
-        for (int i = 0; i < colonne.length; i++) {
-            sheet.autoSizeColumn(i);
-        }
-
-        String filePath = "C:\\Users\\Salvatore\\Desktop\\test.xlsx";
-
-        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
-            workbook.write(fileOut);
-            LOGGER.info("File Excel generato con successo: " + filePath);
         } catch (IOException e) {
-            LOGGER.error("Errore nella creazione del file excel nel percorso indicato: " + estraiEccezione(e));
-        } finally {
-            try {
-                workbook.close();
-            } catch (IOException e) {
-                LOGGER.error("Errore nella creazione del file excel: " + estraiEccezione(e));
-            }
+            LOGGER.error("Errore nella generazione del file Excel: " + estraiEccezione(e));
         }
     }
 

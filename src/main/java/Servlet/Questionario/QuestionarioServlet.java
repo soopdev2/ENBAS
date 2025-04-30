@@ -757,7 +757,6 @@ public class QuestionarioServlet extends HttpServlet {
                     }
                 }
 
-                // Handle the completion date and user details (as before)
                 if (questionario.getStatus() == 3
                         && questionario.getDescrizione().equals(Stato_questionario.COMPLETATO) || questionario.getStatus() == 4 && questionario.getDescrizione().equals(Stato_questionario.COMPLETATO2)) {
                     jsonQuestionario.addProperty("data_di_completamento", Utils.getparsedDate(questionario.getDataCompletamento().toString()));
