@@ -147,7 +147,7 @@ public class QuestionarioServlet extends HttpServlet {
                                         utenteQuestionario.setDataDiAssegnazione(formattedDate);
 
                                         em.persist(utenteQuestionario);
-                                        logger.info("Questionario assegnato con successo all'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
+                                        logger.info("Questionario assegnato con successo all'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
                                     } else {
                                         if (!response.isCommitted()) {
                                             response.sendRedirect("AD_assegna_questionario.jsp?esito=KO3&codice=004");
@@ -403,7 +403,7 @@ public class QuestionarioServlet extends HttpServlet {
                 questionario.setDescrizione(Stato_questionario.PRESO_IN_CARICO);
                 em.merge(questionario);
                 em.getTransaction().commit();
-                logger.info("Questionario con id " + questionario.getId() + "  è stato preso in carico con successo dall'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
+                logger.info("Questionario con id " + questionario.getId() + "  è stato preso in carico con successo dall'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
             }
         } catch (Exception e) {
             if (em != null && em.getTransaction().isActive()) {
@@ -465,7 +465,7 @@ public class QuestionarioServlet extends HttpServlet {
                 }
 
                 em.getTransaction().commit();
-                logger.info("Progressi questionario salvati con successo dall'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
+                logger.info("Progressi questionario salvati con successo dall'utente con id " + userId + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.sendRedirect("US_questionario.jsp?esito=OK&codice=002");
             } catch (Exception e) {
@@ -683,7 +683,7 @@ public class QuestionarioServlet extends HttpServlet {
                 em.merge(questionario);
                 em.getTransaction().commit();
             }
-            logger.info("Questionario con id " + questionario.getId() + " salvato con successo " + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss"), new Date());
+            logger.info("Questionario con id " + questionario.getId() + " salvato con successo " + " in data " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
 
             return questionario;
         } catch (Exception e) {

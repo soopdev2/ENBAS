@@ -241,13 +241,13 @@
                                     <table class="table table-hover table-striped" id="utenti">
                                         <thead>
                                             <tr class="text-primary">
-                                                <th>ID</th>
-                                                <th>Nome</th>
-                                                <th>Cognome</th>
-                                                <th>Età</th>
-                                                <th>Indirizzo</th>
-                                                <th>Ruolo</th>
-                                                <th>Azione</th>
+                                                <th style="width: 5%">ID</th>
+                                                <th style="width: 15%;">Nome</th>
+                                                <th style="width: 15%;">Cognome</th>
+                                                <th style="width: 5%;">Età</th>
+                                                <th style="width: 15%;">Indirizzo</th>
+                                                <th style="width: 15%;">Ruolo</th>
+                                                <th style="width: 15%;">Azione</th>
                                             </tr>
                                         </thead>
                                         <tbody>

@@ -27,6 +27,7 @@ $(document).ready(function () {
             {"data": "azione"}
         ],
         "pagingType": "full_numbers",
+        autoWidth: false,
         "pageLength": 5,
         "lengthChange": false,
         "order": [[0, 'asc']],

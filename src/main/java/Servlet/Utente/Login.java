@@ -59,7 +59,7 @@ public class Login extends HttpServlet {
             int roleId = jPAUtil.authenticate(username, password);
             if (roleId != -1) {
                 Utente user = jPAUtil.getUserByUsername(username);
-                if (request.getContextPath().contains("gestionale_questionario")) {
+                if (request.getContextPath().contains("ENBAS")) {
                     request.getSession().setAttribute("src", "../..");
                 }
 

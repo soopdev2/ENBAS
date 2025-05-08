@@ -494,7 +494,7 @@
 
         <% } else if (utente_questionario
                 == null || utente_questionario.getStatus()
-                == 0 && utente_questionario.getDescrizione() == null) {%>
+== 0 && utente_questionario.getDescrizione() == null || utente_questionario.getStatus() == 0 &&  utente_questionario.getDescrizione().equals(Stato_questionario.PRESO_IN_CARICO)){%>
 
 
         <header class="it-header-wrapper">
