@@ -494,7 +494,7 @@
 
         <% } else if (utente_questionario
                 == null || utente_questionario.getStatus()
-== 0 && utente_questionario.getDescrizione() == null || utente_questionario.getStatus() == 0 &&  utente_questionario.getDescrizione().equals(Stato_questionario.PRESO_IN_CARICO)){%>
+                == 0 && utente_questionario.getDescrizione() == null || utente_questionario.getStatus() == 0 && utente_questionario.getDescrizione().equals(Stato_questionario.PRESO_IN_CARICO)) {%>
 
 
         <header class="it-header-wrapper">
@@ -843,27 +843,28 @@
                             opzioni = domanda.getOpzioni().trim();
                         }
 
-                        if (tipo_domanda == Tipo_domanda.DOMANDA_APERTA) {
-                            questionJSON.append("\"type\": \"text\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCELTA_MULTIPLA) {
+                        //if (tipo_domanda == Tipo_domanda.DOMANDA_APERTA) {
+                        //questionJSON.append("\"type\": \"text\",");
+                        //questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
+                        if (tipo_domanda == Tipo_domanda.DOMANDA_SCELTA_MULTIPLA) {
                             String[] listaOpzioni = opzioni.split(",");
                             Arrays.sort(listaOpzioni);
                             questionJSON.append("\"type\": \"radiogroup\",");
                             questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
                             questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCALA_VALUTAZIONE) {
-                            questionJSON.append("\"type\": \"rating\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
-                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
-                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SELECT) {
-                            String[] listaOpzioni = opzioni.split(",");
-                            Arrays.sort(listaOpzioni);
-                            questionJSON.append("\"type\": \"dropdown\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
+//                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCALA_VALUTAZIONE) {
+//                            questionJSON.append("\"type\": \"rating\",");
+//                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+//                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
+//                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
+//                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
+//                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SELECT) {
+//                            String[] listaOpzioni = opzioni.split(",");
+//                            Arrays.sort(listaOpzioni);
+//                            questionJSON.append("\"type\": \"dropdown\",");
+//                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+//                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
+//                        }
                         }
                     }
 
@@ -1203,27 +1204,29 @@
                             opzioni = domanda.getOpzioni().trim();
                         }
 
-                        if (tipo_domanda == Tipo_domanda.DOMANDA_APERTA) {
-                            questionJSON.append("\"type\": \"text\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCELTA_MULTIPLA) {
+                        //if (tipo_domanda == Tipo_domanda.DOMANDA_APERTA) {
+                        //questionJSON.append("\"type\": \"text\",");
+                        //questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\"");
+                        if (tipo_domanda == Tipo_domanda.DOMANDA_SCELTA_MULTIPLA) {
                             String[] listaOpzioni = opzioni.split(",");
                             Arrays.sort(listaOpzioni);
                             questionJSON.append("\"type\": \"radiogroup\",");
                             questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
                             questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCALA_VALUTAZIONE) {
-                            questionJSON.append("\"type\": \"rating\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
-                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
-                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
-                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SELECT) {
-                            String[] listaOpzioni = opzioni.split(",");
-                            Arrays.sort(listaOpzioni);
-                            questionJSON.append("\"type\": \"dropdown\",");
-                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
-                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
+//                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SCALA_VALUTAZIONE) {
+//                            questionJSON.append("\"type\": \"rating\",");
+//                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+//                            questionJSON.append("\"minRateDescription\": \"Bassa\",");
+//                            questionJSON.append("\"maxRateDescription\": \"Alta\",");
+//                            questionJSON.append("\"rateValues\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
+//                        } else if (tipo_domanda == Tipo_domanda.DOMANDA_SELECT) {
+//                            String[] listaOpzioni = opzioni.split(",");
+//                            Arrays.sort(listaOpzioni);
+//                            questionJSON.append("\"type\": \"dropdown\",");
+//                            questionJSON.append("\"name\": \"risposta_" + domanda.getId() + "\",");
+//                            questionJSON.append("\"choices\": [\"" + String.join("\",\"", listaOpzioni) + "\"]");
+//                        }
+//                    }
                         }
                     }
 

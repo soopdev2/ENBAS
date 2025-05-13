@@ -607,13 +607,13 @@ public class QuestionarioServlet extends HttpServlet {
                 } else {
                     String tipo = domanda.getTipo_domanda().toString();
                     switch (tipo) {
-                        case "DOMANDA_APERTA":
-                            String rispostaAperta = (String) surveyMap.get(parametroRisposta);
-                            if (rispostaAperta != null && !rispostaAperta.isEmpty()) {
-                                rispostaDetails.put("risposta", rispostaAperta);
-                                risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
-                            }
-                            break;
+//                        case "DOMANDA_APERTA":
+//                            String rispostaAperta = (String) surveyMap.get(parametroRisposta);
+//                            if (rispostaAperta != null && !rispostaAperta.isEmpty()) {
+//                                rispostaDetails.put("risposta", rispostaAperta);
+//                                risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
+//                            }
+//                            break;
                         case "DOMANDA_SCELTA_MULTIPLA":
                             String rispostaMultipla = (String) surveyMap.get(parametroRisposta);
                             if (rispostaMultipla != null && !rispostaMultipla.isEmpty()) {
@@ -624,20 +624,20 @@ public class QuestionarioServlet extends HttpServlet {
                                 risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
                             }
                             break;
-                        case "DOMANDA_SCALA_VALUTAZIONE":
-                            Integer scalaRisposta = (Integer) surveyMap.get(parametroRisposta);
-                            if (scalaRisposta != null) {
-                                rispostaDetails.put("risposta", scalaRisposta.toString());
-                                risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
-                            }
-                            break;
-                        case "DOMANDA_SELECT":
-                            String rispostaSelect = (String) surveyMap.get(parametroRisposta);
-                            if (rispostaSelect != null && !rispostaSelect.isEmpty()) {
-                                rispostaDetails.put("risposta", rispostaSelect);
-                                risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
-                            }
-                            break;
+//                        case "DOMANDA_SCALA_VALUTAZIONE":
+//                            Integer scalaRisposta = (Integer) surveyMap.get(parametroRisposta);
+//                            if (scalaRisposta != null) {
+//                                rispostaDetails.put("risposta", scalaRisposta.toString());
+//                                risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
+//                            }
+//                            break;
+//                        case "DOMANDA_SELECT":
+//                            String rispostaSelect = (String) surveyMap.get(parametroRisposta);
+//                            if (rispostaSelect != null && !rispostaSelect.isEmpty()) {
+//                                rispostaDetails.put("risposta", rispostaSelect);
+//                                risposteCompletate.put(domanda.getId().toString(), rispostaDetails);
+//                            }
+//                            break;
                         default:
                             break;
                     }

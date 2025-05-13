@@ -242,7 +242,11 @@
 
                                                 <label class="form-label" for="area">Seleziona area della domanda</label>
                                                 <select name="area" id="area" required class="form-control border">
+                                                    <% if (domanda.getCategoria() != null) {%>
                                                     <option disabled selected value="<%= domanda.getCategoria().getId()%>"><%= domanda.getCategoria().getNome()%></option>
+                                                    <% } else { %>
+                                                    <option disabled selected>...</option>
+                                                    <% } %>
                                                     <%                                                        List<Categoria> aree = jPAUtil.findAllCategorie();
                                                         for (Categoria c : aree) {
                                                     %>
@@ -282,13 +286,21 @@
 
                                                 <label class="form-label mt-3" for="area_competenza">Seleziona area competenza della domanda</label>
                                                 <select id="area_competenza" name="area_competenza" required class="form-control border">
+                                                    <% if (domanda.getCompetenza() != null && domanda.getCompetenza().getAreeCompetenze() != null) {%>
                                                     <option selected disabled value="<%= domanda.getCompetenza().getAreeCompetenze().getId()%>"><%= domanda.getCompetenza().getAreeCompetenze().getNome()%></option>
+                                                    <% } else { %>
+                                                    <option disabled selected>...</option>
+                                                    <% }%>
                                                 </select>
 
                                                 <br>
                                                 <label class="form-label mt-3" for="competenza">Seleziona abilità/competenza della domanda</label>
                                                 <select id="competenza" name="competenza" required class="form-control border">
+                                                    <% if (domanda.getCompetenza() != null) {%>
                                                     <option selected disabled value="<%= domanda.getCompetenza().getId()%>"><%= domanda.getCompetenza().getDescrizione()%></option>
+                                                    <% } else { %>
+                                                    <option disabled selected>...</option>
+                                                    <% }%>
                                                 </select>
 
                                                 <br>
@@ -517,8 +529,28 @@
                                                         competenzaSelect.trigger('change');
                                                     });
 
-                                                    var jsonData = <%= domanda.getRisposte()%>;
-                                                    caricaRisposte(jsonData);
+</script>
+<script>
+    <% if (domanda.getOpzioni() != null && domanda.getRisposte() == null) {%>
+        var opzioniArray = `<%= domanda.getOpzioni().replace("\"", "\\\"")%>`.split(",");
+
+        var jsonData = {
+            risposte: opzioniArray.map(function (opzione, index) {
+                return {
+                    id: -1 * (index + 1),
+                    testo: opzione.trim(),
+                    corretta: false
+                };
+            })
+        };
+
+        caricaRisposte(jsonData);
+    <% } else {%>
+        var jsonData = <%= domanda.getRisposte() != null ? domanda.getRisposte() : "{}"%>;
+        caricaRisposte(jsonData);
+    <% }%>
+</script>
+
 
 </script>
 <script src="dist/assets/js/custom/logout.js"></script>

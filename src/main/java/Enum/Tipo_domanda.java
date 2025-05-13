@@ -12,9 +12,9 @@ import java.io.Serializable;
  */
 public enum Tipo_domanda implements Serializable {
 
-    DOMANDA_APERTA,
+    //DOMANDA_APERTA,
     DOMANDA_SCELTA_MULTIPLA,
-    DOMANDA_SCALA_VALUTAZIONE,
-    DOMANDA_SELECT
+    //DOMANDA_SCALA_VALUTAZIONE,
+    //DOMANDA_SELECT
 
 }

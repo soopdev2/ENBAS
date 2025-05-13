@@ -135,7 +135,7 @@ function caricaRisposte(jsonData) {
         const responseTextElement = newItem.querySelector(".response-text");
         responseTextElement.id = uniqueId;
         responseTextElement.name = "risposta_text[]";
-        responseTextElement.innerHTML = ""; 
+        responseTextElement.innerHTML = "";
 
         const select = newItem.querySelector("select");
         if (select) {
@@ -168,4 +168,5 @@ function caricaRisposte(jsonData) {
 
     aggiornaContatori();
 }
+
 
