@@ -126,9 +126,10 @@
 
 
         <br>
+        <br>
 
 
-        <footer class="it-footer">
+        <footer class="it-footer" style="width: 100%">
             <div class="it-footer-main">
                 <div class="container">
                     <section>
