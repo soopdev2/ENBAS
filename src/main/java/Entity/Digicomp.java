@@ -15,6 +15,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.util.List;
 
 /**
@@ -22,6 +23,7 @@ import java.util.List;
  * @author Salvatore
  */
 @Entity
+@Table(name = "digicomp")
 public class Digicomp implements Serializable {
 
     private static final long serialVersionUID = 1L;

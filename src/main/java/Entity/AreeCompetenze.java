@@ -10,12 +10,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 /**
  *
  * @author Salvatore
  */
 @Entity
+@Table(name = "areecompetenze")
 public class AreeCompetenze implements Serializable {
 
     private static final long serialVersionUID = 1L;

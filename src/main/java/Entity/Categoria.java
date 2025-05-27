@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
 import java.util.List;
 
 /**
@@ -17,6 +18,7 @@ import java.util.List;
  * @author Salvatore
  */
 @Entity
+@Table(name = "categoria")
 public class Categoria implements Serializable {
 
     private static final long serialVersionUID = 1L;
