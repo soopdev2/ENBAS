@@ -132,6 +132,17 @@ if (esito !== null && codice !== null) {
         esitoModalButton.style.color = 'white';
         esitoModal.show();
         redirect();
+    } else if (esito === "OK" && codice === '007') {
+        esitoModalBody.textContent = "Controllo effettuato con successo. Nuovo/i questionario/i assegnato/i!";
+        esitoModalBody.style.color = '#198754';
+        esitoModalHeader.style.background = '#198754';
+        esitoModalHeader.style.color = 'white';
+        esitoModalHeader.textContent = "Operazione effettuata con successo!";
+        esitoModalButton.style.backgroundColor = '#198754';
+        esitoModalButton.style.borderColor = '#198754';
+        esitoModalButton.style.color = 'white';
+        esitoModal.show();
+        redirect();
     } else if (esito === "KO" && codice === '001') {
         esitoModalBody.textContent = "Non è stato possibile iniziare il questionario! Riprova più tardi.";
         esitoModalBody.style.color = '#dc3545';
@@ -277,6 +288,30 @@ if (esito !== null && codice !== null) {
         redirect();
     } else if (esito === "KO4" && codice === '007') {
         esitoModalBody.textContent = "Nessun questionario DIGICOMP 2.2 trovato per l'utente selezionato! Riprova più tardi.";
+        esitoModalBody.style.color = '#dc3545';
+        esitoModalHeader.style.background = '#dc3545';
+        esitoModalHeader.style.color = 'white';
+        esitoModalHeader.textContent = "Operazione non andata a buon fine!";
+        esitoModalButton.style.backgroundColor = '#dc3545';
+        esitoModalButton.style.color = 'white';
+        esitoModalButton.style.borderColor = '#dc3545';
+        esitoModalButton.style.color = 'white';
+        esitoModal.show();
+        redirect();
+    } else if (esito === "KO5" && codice === '007') {
+        esitoModalBody.textContent = "Non è stato possibile effettuare il controllo o assegnare un nuovo questionario! Riprova più tardi.";
+        esitoModalBody.style.color = '#dc3545';
+        esitoModalHeader.style.background = '#dc3545';
+        esitoModalHeader.style.color = 'white';
+        esitoModalHeader.textContent = "Operazione non andata a buon fine!";
+        esitoModalButton.style.backgroundColor = '#dc3545';
+        esitoModalButton.style.color = 'white';
+        esitoModalButton.style.borderColor = '#dc3545';
+        esitoModalButton.style.color = 'white';
+        esitoModal.show();
+        redirect();
+    } else if (esito === "KO5" && codice === '007') {
+        esitoModalBody.textContent = "Nessun questionario completato trovato! Riprova più tardi.";
         esitoModalBody.style.color = '#dc3545';
         esitoModalHeader.style.background = '#dc3545';
         esitoModalHeader.style.color = 'white';

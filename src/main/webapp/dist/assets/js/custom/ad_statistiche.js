@@ -69,3 +69,7 @@ $(document).ready(function () {
 
     table.ajax.reload();
 });
+
+function controllaDigicomp() {
+    window.location.href = 'StatisticheServlet?isControllaDigicomp=true';
+}

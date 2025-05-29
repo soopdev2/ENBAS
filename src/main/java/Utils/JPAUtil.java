@@ -662,11 +662,12 @@ public class JPAUtil {
             questionariCompletato2.add(vecchioQuestionario);
 
             if (!questionariCompletato2.isEmpty()) {
-                nuoveDomande = selezionaDomande2(vecchioQuestionario, nuovoLivello);
-            } else {
-                nuoveDomande = selezionaDomande(vecchioQuestionario, nuovoLivello);
-
+                nuoveDomande = selezionaDomande2(vecchioQuestionario, nuovoLivello + 1);
             }
+            //} else {
+            //    nuoveDomande = selezionaDomande(vecchioQuestionario, nuovoLivello + 1);
+
+            //}
             vecchioQuestionario.setStatus(4);
             vecchioQuestionario.setDescrizione(Stato_questionario.COMPLETATO2);
             em2.merge(vecchioQuestionario);
@@ -768,12 +769,12 @@ public class JPAUtil {
                 domandePerAreaCompetenza.computeIfAbsent(areaCompetenzaId, k -> new ArrayList<>()).add(domanda);
             }
 
-            Map<String, Integer> distribuzione = getDistribuzioneDomandePerAreaCompetenza();
+            Map<Long, Integer> distribuzione = getDistribuzioneDomandePerAreaCompetenza();
 
             List<Domanda> domandeSelezionate = new ArrayList<>();
 
-            for (Map.Entry<String, Integer> entry : distribuzione.entrySet()) {
-                String areaCompetenza = entry.getKey();
+            for (Map.Entry<Long, Integer> entry : distribuzione.entrySet()) {
+                Long areaCompetenza = entry.getKey();
                 int numeroRichiesto = entry.getValue();
 
                 List<Domanda> domandeAreaCompetenza = domandePerAreaCompetenza.getOrDefault(areaCompetenza, new ArrayList<>());
@@ -816,11 +817,9 @@ public class JPAUtil {
             questionari.add(questionarioVecchio);
 
             Set<Long> domandeUsateIds = new HashSet<>();
-            if (!questionari.isEmpty()) {
-                for (Questionario q : questionari) {
-                    for (Domanda d : q.getDomande()) {
-                        domandeUsateIds.add(d.getId());
-                    }
+            for (Questionario q : questionari) {
+                for (Domanda d : q.getDomande()) {
+                    domandeUsateIds.add(d.getId());
                 }
             }
 
@@ -828,7 +827,8 @@ public class JPAUtil {
             List<Domanda> domandeFiltrate = new ArrayList<>();
 
             for (Domanda domanda : domande) {
-                if (!domandeUsateIds.contains(domanda.getId()) && domanda.getCompetenza().getLivello().equals(nuovoLivello)) {
+                String livelloDomanda = domanda.getCompetenza() != null ? domanda.getCompetenza().getLivello() : null;
+                if (livelloDomanda != null && livelloDomanda.trim().equals(String.valueOf(nuovoLivello))) {
                     domandeFiltrate.add(domanda);
                 }
             }
@@ -839,55 +839,67 @@ public class JPAUtil {
                 domandePerAreaCompetenza.computeIfAbsent(areaCompetenzaId, k -> new ArrayList<>()).add(domanda);
             }
 
-            Map<String, Integer> distribuzione = getDistribuzioneDomandePerAreaCompetenza();
-
+            Map<Long, Integer> distribuzione = getDistribuzioneDomandePerAreaCompetenza();
             List<Domanda> domandeSelezionate = new ArrayList<>();
 
-            for (Map.Entry<String, Integer> entry : distribuzione.entrySet()) {
-                String areaCompetenza = entry.getKey();
+            for (Map.Entry<Long, Integer> entry : distribuzione.entrySet()) {
+                Long areaCompetenzaId = entry.getKey();
                 int numeroRichiesto = entry.getValue();
 
-                List<Domanda> domandeAreaCompetenza = domandePerAreaCompetenza.getOrDefault(areaCompetenza, new ArrayList<>());
+                List<Domanda> domandeAreaCompetenza = domandePerAreaCompetenza.getOrDefault(areaCompetenzaId, new ArrayList<>());
                 Collections.shuffle(domandeAreaCompetenza);
 
                 int count = 0;
                 for (Domanda domanda : domandeAreaCompetenza) {
-                    if (count < numeroRichiesto) {
+                    if (count < numeroRichiesto && !domandeUsateIds.contains(domanda.getId())) {
                         domandeSelezionate.add(domanda);
                         domandeUsateIds.add(domanda.getId());
                         count++;
-                    } else {
-                        break;
                     }
                 }
             }
 
-            while (domandeSelezionate.size() < 21) {
-                for (List<Domanda> domandeAreaCompetenza : domandePerAreaCompetenza.values()) {
-                    Collections.shuffle(domandeAreaCompetenza);
-                    for (Domanda domanda : domandeAreaCompetenza) {
-                        if (domandeSelezionate.size() < 21 && !domandeUsateIds.contains(domanda.getId())) {
-                            domandeSelezionate.add(domanda);
-                            domandeUsateIds.add(domanda.getId());
-                        }
+            for (List<Domanda> domandeAreaCompetenza : domandePerAreaCompetenza.values()) {
+                Collections.shuffle(domandeAreaCompetenza);
+                for (Domanda domanda : domandeAreaCompetenza) {
+                    if (domandeSelezionate.size() >= 21) {
+                        break;
+                    }
+                    if (!domandeUsateIds.contains(domanda.getId())) {
+                        domandeSelezionate.add(domanda);
+                        domandeUsateIds.add(domanda.getId());
+                    }
+                }
+            }
+
+            if (domandeSelezionate.size() < 21) {
+                List<Domanda> rimanenti = new ArrayList<>(domandeFiltrate);
+                Collections.shuffle(rimanenti);
+                for (Domanda domanda : rimanenti) {
+                    if (domandeSelezionate.size() >= 21) {
+                        break;
+                    }
+                    if (!domandeSelezionate.contains(domanda)) {
+                        domandeSelezionate.add(domanda);
                     }
                 }
             }
 
             return domandeSelezionate;
+
         } catch (Exception e) {
             LOGGER.error("Non è stato possibile effettuare la selezione delle domande" + "\n" + estraiEccezione(e));
             return Collections.emptyList();
         }
     }
 
-    private Map<String, Integer> getDistribuzioneDomandePerAreaCompetenza() {
+    private Map<Long, Integer> getDistribuzioneDomandePerAreaCompetenza() {
         return Map.of(
-                "Area1", 3,
-                "Area2", 6,
-                "Area3", 4,
-                "Area4", 4,
-                "Area5", 4
+                1L, 3,
+                2L, 6,
+                3L, 4,
+                4L, 4,
+                5L, 4
         );
     }
 

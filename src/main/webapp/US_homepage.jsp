@@ -42,7 +42,6 @@
         <link rel="icon" type="image/svg+xml" href="dist/img/favicon/favicon.svg" />
         <link rel="shortcut icon" href="dist/img/favicon/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="dist/img/favicon/apple-touch-icon.png" />
-        <link rel="manifest" href="dist/img/favicon/site.webmanifest" />
         <link href='https://fonts.googleapis.com/css?family=Titillium Web' rel='stylesheet'>
         <title>Homepage</title>
     </head>
