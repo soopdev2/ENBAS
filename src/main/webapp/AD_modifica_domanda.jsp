@@ -464,7 +464,7 @@
 <script src="dist/assets/js/bootstrap-italia.bundle.min.js"></script>
 <script src="dist/assets/js/external/jquery-3.7.1.js"></script>
 <script src="dist/assets/js/external/select2.min.js"></script>
-<script src="https://cdn.tiny.cloud/1/tbnutsowolzn3f1fnn0597qd5fvo68ivw52yw2gnafphfpi8/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/78mv6p72i9rzrv18f4tg2j48oy5gcxcpm353xk102kcfrpvl/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <script src="dist/assets/js/custom/ad_modifica_domanda.js"></script>
 <script src="dist/assets/js/custom/globalModal.js"></script>
 <script>
