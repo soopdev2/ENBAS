@@ -132,13 +132,19 @@ public class StatisticheServlet extends HttpServlet {
                     } else {
                         jsonUtente.addProperty("ruolo", "non disponibile");
                     }
+                    JPAUtil jpaUtil = new JPAUtil();
+                    Questionario ultimoQuestionario = jpaUtil.findUltimoQuestionarioCompletatoPerUtente(utente);
 
-                    jsonUtente.addProperty("azione",
-                            "<form method='POST' action='StatisticheServlet?isGeneraExcel=true'>"
-                            + "<button type='submit' class='btn btn-success'>Genera excel</button>"
-                            + "<input type='hidden' name='utente_id' value='" + utente.getId() + "' />"
-                            + "</form>"
-                    );
+                    if (ultimoQuestionario != null) {
+                        jsonUtente.addProperty("azione",
+                                "<form method='POST' action='StatisticheServlet?isGeneraExcel=true'>"
+                                + "<button type='submit' class='btn btn-success'>Genera excel</button>"
+                                + "<input type='hidden' name='utente_id' value='" + utente.getId() + "' />"
+                                + "</form>"
+                        );
+                    } else {
+                        jsonUtente.addProperty("azione", "non disponibile");
+                    }
 
                     jsonData.add(jsonUtente);
                 }

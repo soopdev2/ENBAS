@@ -478,7 +478,7 @@
                                             </td>
 
                                             <% if (!corretta) {%>
-                                            <td class="text-success" style="font-weight: bold; white-space: nowrap;">
+                                            <td class="text-success" style="font-weight: bold;">
                                                 ❌ <%= String.join(", ", risposteGiustePulite)%>
                                             </td>
                                             <% } else { %>

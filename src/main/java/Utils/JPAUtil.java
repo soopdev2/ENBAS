@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Iterator;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mindrot.jbcrypt.BCrypt;
@@ -740,158 +741,122 @@ public class JPAUtil {
         return null;
     }
 
-    private List<Domanda> selezionaDomande(Questionario questionarioVecchio, int nuovoLivello) {
-        try {
-            List<Questionario> questionari = getQuestionariCompletatiByUtente(questionarioVecchio.getUtenti(), Stato_questionario.COMPLETATO);
-            questionari.add(questionarioVecchio);
-
-            Set<Long> domandeUsateIds = new HashSet<>();
-            if (!questionari.isEmpty()) {
-                for (Questionario q : questionari) {
-                    for (Domanda d : q.getDomande()) {
-                        domandeUsateIds.add(d.getId());
-                    }
-                }
-            }
-
-            List<Domanda> domande = getDomandeVisibili();
-            List<Domanda> domandeFiltrate = new ArrayList<>();
-
-            for (Domanda domanda : domande) {
-                if (!domandeUsateIds.contains(domanda.getId()) && domanda.getCompetenza().getLivello().equals(nuovoLivello)) {
-                    domandeFiltrate.add(domanda);
-                }
-            }
-
-            Map<Long, List<Domanda>> domandePerAreaCompetenza = new HashMap<>();
-            for (Domanda domanda : domandeFiltrate) {
-                Long areaCompetenzaId = domanda.getCompetenza().getAreeCompetenze().getId();
-                domandePerAreaCompetenza.computeIfAbsent(areaCompetenzaId, k -> new ArrayList<>()).add(domanda);
-            }
-
-            Map<Long, Integer> distribuzione = getDistribuzioneDomandePerAreaCompetenza();
-
-            List<Domanda> domandeSelezionate = new ArrayList<>();
-
-            for (Map.Entry<Long, Integer> entry : distribuzione.entrySet()) {
-                Long areaCompetenza = entry.getKey();
-                int numeroRichiesto = entry.getValue();
-
-                List<Domanda> domandeAreaCompetenza = domandePerAreaCompetenza.getOrDefault(areaCompetenza, new ArrayList<>());
-                Collections.shuffle(domandeAreaCompetenza);
-
-                int count = 0;
-                for (Domanda domanda : domandeAreaCompetenza) {
-                    if (count < numeroRichiesto) {
-                        domandeSelezionate.add(domanda);
-                        domandeUsateIds.add(domanda.getId());
-                        count++;
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            while (domandeSelezionate.size() < 21) {
-                for (List<Domanda> domandeAreaCompetenza : domandePerAreaCompetenza.values()) {
-                    Collections.shuffle(domandeAreaCompetenza);
-                    for (Domanda domanda : domandeAreaCompetenza) {
-                        if (domandeSelezionate.size() < 21 && !domandeUsateIds.contains(domanda.getId())) {
-                            domandeSelezionate.add(domanda);
-                            domandeUsateIds.add(domanda.getId());
-                        }
-                    }
-                }
-            }
-
-            return domandeSelezionate;
-        } catch (Exception e) {
-            LOGGER.error("Non è stato possibile effettuare la selezione delle domande" + "\n" + estraiEccezione(e));
-            return Collections.emptyList();
-        }
-    }
-
     private List<Domanda> selezionaDomande2(Questionario questionarioVecchio, int nuovoLivello) {
-        try {
-            List<Questionario> questionari = getQuestionariCompletatiByUtente(questionarioVecchio.getUtenti(), Stato_questionario.COMPLETATO2);
-            questionari.add(questionarioVecchio);
+    try {
+        List<Questionario> questionari = getQuestionariCompletatiByUtente(
+                questionarioVecchio.getUtenti(), Stato_questionario.COMPLETATO2);
+        questionari.add(questionarioVecchio);
 
-            Set<Long> domandeUsateIds = new HashSet<>();
-            for (Questionario q : questionari) {
-                for (Domanda d : q.getDomande()) {
-                    domandeUsateIds.add(d.getId());
-                }
-            }
+        Set<Long> domandeUsateIds = questionari.stream()
+                .flatMap(q -> q.getDomande().stream())
+                .map(Domanda::getId)
+                .collect(Collectors.toSet());
 
-            List<Domanda> domande = getDomandeVisibili();
-            List<Domanda> domandeFiltrate = new ArrayList<>();
+        List<Domanda> tutteDomandeVisibili = getDomandeVisibili();
 
-            for (Domanda domanda : domande) {
-                String livelloDomanda = domanda.getCompetenza() != null ? domanda.getCompetenza().getLivello() : null;
-                if (livelloDomanda != null && livelloDomanda.trim().equals(String.valueOf(nuovoLivello))) {
-                    domandeFiltrate.add(domanda);
-                }
-            }
+        Map<Long, Map<Long, List<Domanda>>> domandePerCategoriaEArea = new HashMap<>();
+        for (Domanda d : tutteDomandeVisibili) {
+            if (d.getCategoria() == null) continue; 
 
-            Map<Long, List<Domanda>> domandePerAreaCompetenza = new HashMap<>();
-            for (Domanda domanda : domandeFiltrate) {
-                Long areaCompetenzaId = domanda.getCompetenza().getAreeCompetenze().getId();
-                domandePerAreaCompetenza.computeIfAbsent(areaCompetenzaId, k -> new ArrayList<>()).add(domanda);
-            }
+            Long catId = d.getCategoria().getId();
+            Long areaId = (d.getCompetenza() != null && d.getCompetenza().getAreeCompetenze() != null)
+                    ? d.getCompetenza().getAreeCompetenze().getId()
+                    : null;
 
-            Map<Long, Integer> distribuzione = getDistribuzioneDomandePerAreaCompetenza();
-            List<Domanda> domandeSelezionate = new ArrayList<>();
-
-            for (Map.Entry<Long, Integer> entry : distribuzione.entrySet()) {
-                Long areaCompetenzaId = entry.getKey();
-                int numeroRichiesto = entry.getValue();
-
-                List<Domanda> domandeAreaCompetenza = domandePerAreaCompetenza.getOrDefault(areaCompetenzaId, new ArrayList<>());
-                Collections.shuffle(domandeAreaCompetenza);
-
-                int count = 0;
-                for (Domanda domanda : domandeAreaCompetenza) {
-                    if (count < numeroRichiesto && !domandeUsateIds.contains(domanda.getId())) {
-                        domandeSelezionate.add(domanda);
-                        domandeUsateIds.add(domanda.getId());
-                        count++;
-                    }
-                }
-            }
-
-            for (List<Domanda> domandeAreaCompetenza : domandePerAreaCompetenza.values()) {
-                Collections.shuffle(domandeAreaCompetenza);
-                for (Domanda domanda : domandeAreaCompetenza) {
-                    if (domandeSelezionate.size() >= 21) {
-                        break;
-                    }
-                    if (!domandeUsateIds.contains(domanda.getId())) {
-                        domandeSelezionate.add(domanda);
-                        domandeUsateIds.add(domanda.getId());
-                    }
-                }
-            }
-
-            if (domandeSelezionate.size() < 21) {
-                List<Domanda> rimanenti = new ArrayList<>(domandeFiltrate);
-                Collections.shuffle(rimanenti);
-                for (Domanda domanda : rimanenti) {
-                    if (domandeSelezionate.size() >= 21) {
-                        break;
-                    }
-                    if (!domandeSelezionate.contains(domanda)) {
-                        domandeSelezionate.add(domanda);
-                    }
-                }
-            }
-
-            return domandeSelezionate;
-
-        } catch (Exception e) {
-            LOGGER.error("Non è stato possibile effettuare la selezione delle domande" + "\n" + estraiEccezione(e));
-            return Collections.emptyList();
+            domandePerCategoriaEArea
+                    .computeIfAbsent(catId, k -> new HashMap<>())
+                    .computeIfAbsent(areaId, k -> new ArrayList<>())
+                    .add(d);
         }
+
+        Map<Long, Integer> distribuzione = getDistribuzioneDomandePerAreaCompetenza();
+        List<Domanda> domandeSelezionate = new ArrayList<>();
+
+        for (Map.Entry<Long, Integer> entry : distribuzione.entrySet()) {
+            Long categoriaId = entry.getKey();
+            int numRichiesto = entry.getValue();
+
+            Map<Long, List<Domanda>> aree = domandePerCategoriaEArea.getOrDefault(categoriaId, Collections.emptyMap());
+            List<Domanda> domandeCategoria = new ArrayList<>();
+
+            for (Map.Entry<Long, List<Domanda>> areaEntry : aree.entrySet()) {
+                Long areaId = areaEntry.getKey();
+                List<Domanda> domandeArea = areaEntry.getValue();
+
+                List<Domanda> candidateLivelloCorretto = domandeArea.stream()
+                        .filter(d -> d.getCompetenza() != null)
+                        .filter(d -> String.valueOf(nuovoLivello).equals(d.getCompetenza().getLivello()))
+                        .filter(d -> !domandeUsateIds.contains(d.getId()))
+                        .collect(Collectors.toList());
+
+                Collections.shuffle(candidateLivelloCorretto);
+                if (!candidateLivelloCorretto.isEmpty()) {
+                    Domanda scelta = candidateLivelloCorretto.get(0);
+                    domandeCategoria.add(scelta);
+                    domandeUsateIds.add(scelta.getId());
+                    LOGGER.info("Aggiunta domanda livello corretto ID " + scelta.getId() + " categoria " + categoriaId + " area_competenza_id " + areaId);
+                }
+            }
+
+            if (domandeCategoria.size() < numRichiesto) {
+                List<Domanda> fallbackLivelloDiverso = tutteDomandeVisibili.stream()
+                        .filter(d -> d.getCategoria() != null && d.getCategoria().getId().equals(categoriaId))
+                        .filter(d -> d.getCompetenza() != null)
+                        .filter(d -> !String.valueOf(nuovoLivello).equals(d.getCompetenza().getLivello()))
+                        .filter(d -> !domandeUsateIds.contains(d.getId()))
+                        .collect(Collectors.toList());
+
+                Collections.shuffle(fallbackLivelloDiverso);
+                for (Domanda d : fallbackLivelloDiverso) {
+                    if (d.getCategoria() == null) continue; 
+                    if (domandeCategoria.size() >= numRichiesto) break;
+                    domandeCategoria.add(d);
+                    domandeUsateIds.add(d.getId());
+                    LOGGER.info("Aggiunta domanda fallback livello diverso ID " + d.getId() + " categoria " + categoriaId);
+                }
+            }
+
+            if (domandeCategoria.size() < numRichiesto) {
+                List<Domanda> fallbackSenzaCompetenza = tutteDomandeVisibili.stream()
+                        .filter(d -> d.getCategoria() != null && d.getCategoria().getId().equals(categoriaId))
+                        .filter(d -> d.getCompetenza() == null)
+                        .filter(d -> !domandeUsateIds.contains(d.getId()))
+                        .collect(Collectors.toList());
+
+                Collections.shuffle(fallbackSenzaCompetenza);
+                for (Domanda d : fallbackSenzaCompetenza) {
+                    if (domandeCategoria.size() >= numRichiesto) break;
+                    domandeCategoria.add(d);
+                    domandeUsateIds.add(d.getId());
+                    LOGGER.info("Aggiunta domanda fallback senza competenza ID " + d.getId() + " categoria " + categoriaId);
+                }
+            }
+
+            domandeSelezionate.addAll(domandeCategoria);
+        }
+
+        if (domandeSelezionate.size() < 21) {
+            List<Domanda> extra = tutteDomandeVisibili.stream()
+                    .filter(d -> !domandeUsateIds.contains(d.getId()))
+                    .collect(Collectors.toList());
+
+            Collections.shuffle(extra);
+            for (Domanda d : extra) {
+                if (domandeSelezionate.size() >= 21) break;
+                domandeSelezionate.add(d);
+                domandeUsateIds.add(d.getId());
+                LOGGER.info("Aggiunta domanda extra per raggiungere 21 ID " + d.getId());
+            }
+        }
+
+        LOGGER.info("Selezione domande completata, totale domande selezionate: " + domandeSelezionate.size());
+        return domandeSelezionate;
+
+    } catch (Exception e) {
+        LOGGER.error("Errore nella selezione domande: " + estraiEccezione(e));
+        return Collections.emptyList();
     }
+}
 
     private Map<Long, Integer> getDistribuzioneDomandePerAreaCompetenza() {
         return Map.of(
