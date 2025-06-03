@@ -1498,50 +1498,74 @@ public class JPAUtil {
             }
 
             if (risposta_text != null && idRisposte != null && si_no_select != null) {
-                JSONObject risposteJsonPrecedente = new JSONObject(vecchiaDomanda.getRisposte());
-                JSONArray rispostePrecedenti = risposteJsonPrecedente.optJSONArray("risposte");
-                Map<Integer, JSONObject> risposteEsistenti = new HashMap<>();
-
-                if (rispostePrecedenti != null) {
-                    for (int i = 0; i < rispostePrecedenti.length(); i++) {
-                        JSONObject r = rispostePrecedenti.getJSONObject(i);
-                        risposteEsistenti.put(r.getInt("id"), r);
-                    }
-                }
 
                 JSONArray nuoveRisposteArray = new JSONArray();
                 List<String> corrette = new ArrayList<>();
 
-                int nextId = risposteEsistenti.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
+                if (vecchiaDomanda.getOpzioni() != null && vecchiaDomanda.getRisposte() == null) {
+                    int nextId = 1;
 
-                for (int i = 0; i < risposta_text.length; i++) {
-                    String testoRisposta = risposta_text[i];
-                    String selezione = si_no_select[i];
-                    int idRisposta;
+                    for (int i = 0; i < risposta_text.length; i++) {
+                        String testoRisposta = risposta_text[i];
+                        String selezione = si_no_select[i];
 
-                    try {
-                        idRisposta = Integer.parseInt(idRisposte[i]);
-                    } catch (NumberFormatException e) {
-                        idRisposta = 0;
+                        if (testoRisposta != null && !testoRisposta.trim().isEmpty()) {
+                            JSONObject rispostaJSON = new JSONObject();
+                            rispostaJSON.put("id", nextId++);
+                            rispostaJSON.put("testo", testoRisposta.trim());
+                            rispostaJSON.put("corretta", "SI".equalsIgnoreCase(selezione));
+
+                            nuoveRisposteArray.put(rispostaJSON);
+
+                            if (rispostaJSON.getBoolean("corretta")) {
+                                corrette.add(String.valueOf(rispostaJSON.getInt("id")));
+                            }
+                        }
                     }
 
-                    if (testoRisposta != null && !testoRisposta.trim().isEmpty()) {
-                        JSONObject rispostaJSON = (idRisposta > 0 && risposteEsistenti.containsKey(idRisposta))
-                                ? risposteEsistenti.get(idRisposta)
-                                : new JSONObject();
+                } else if (vecchiaDomanda.getRisposte() != null) {
+                    JSONObject risposteJsonPrecedente = new JSONObject(vecchiaDomanda.getRisposte());
+                    JSONArray rispostePrecedenti = risposteJsonPrecedente.optJSONArray("risposte");
+                    Map<Integer, JSONObject> risposteEsistenti = new HashMap<>();
 
-                        if (idRisposta <= 0) {
-                            idRisposta = nextId++;
+                    if (rispostePrecedenti != null) {
+                        for (int i = 0; i < rispostePrecedenti.length(); i++) {
+                            JSONObject r = rispostePrecedenti.getJSONObject(i);
+                            risposteEsistenti.put(r.getInt("id"), r);
+                        }
+                    }
+
+                    int nextId = risposteEsistenti.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
+
+                    for (int i = 0; i < risposta_text.length; i++) {
+                        String testoRisposta = risposta_text[i];
+                        String selezione = si_no_select[i];
+                        int idRisposta;
+
+                        try {
+                            idRisposta = Integer.parseInt(idRisposte[i]);
+                        } catch (NumberFormatException e) {
+                            idRisposta = 0;
                         }
 
-                        rispostaJSON.put("id", idRisposta);
-                        rispostaJSON.put("testo", testoRisposta.trim());
-                        rispostaJSON.put("corretta", "SI".equalsIgnoreCase(selezione));
+                        if (testoRisposta != null && !testoRisposta.trim().isEmpty()) {
+                            JSONObject rispostaJSON = (idRisposta > 0 && risposteEsistenti.containsKey(idRisposta))
+                                    ? risposteEsistenti.get(idRisposta)
+                                    : new JSONObject();
 
-                        nuoveRisposteArray.put(rispostaJSON);
+                            if (idRisposta <= 0) {
+                                idRisposta = nextId++;
+                            }
 
-                        if (rispostaJSON.getBoolean("corretta")) {
-                            corrette.add(String.valueOf(idRisposta));
+                            rispostaJSON.put("id", idRisposta);
+                            rispostaJSON.put("testo", testoRisposta.trim());
+                            rispostaJSON.put("corretta", "SI".equalsIgnoreCase(selezione));
+
+                            nuoveRisposteArray.put(rispostaJSON);
+
+                            if (rispostaJSON.getBoolean("corretta")) {
+                                corrette.add(String.valueOf(idRisposta));
+                            }
                         }
                     }
                 }

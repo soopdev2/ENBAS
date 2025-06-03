@@ -461,10 +461,11 @@
 </div>
 
 
+<% String apiKey = Utils.config.getString("tiny_mce_api_key");%>
 <script src="dist/assets/js/bootstrap-italia.bundle.min.js"></script>
 <script src="dist/assets/js/external/jquery-3.7.1.js"></script>
 <script src="dist/assets/js/external/select2.min.js"></script>
-<script src="https://cdn.tiny.cloud/1/78mv6p72i9rzrv18f4tg2j48oy5gcxcpm353xk102kcfrpvl/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/<%= apiKey%>/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <script src="dist/assets/js/custom/ad_modifica_domanda.js"></script>
 <script src="dist/assets/js/custom/globalModal.js"></script>
 <script>
@@ -521,9 +522,24 @@
                                                         competenzaSelect.trigger('change');
                                                     });
 
-                                                    var jsonData = <%= domanda.getRisposte()%>;
-                                                    caricaRisposte(jsonData);
+                                                    let jsonData;
 
+    <% if (domanda.getOpzioni() != null && domanda.getRisposte() == null) {%>
+                                                    const opzioniString = "<%= domanda.getOpzioni().replace("\"", "\\\"").replace("\n", "").replace("\r", "")%>";
+                                                    const opzioniArray = opzioniString.split(",");
+
+                                                    jsonData = {
+                                                        risposte: opzioniArray.map((testo, index) => ({
+                                                                id: index + 1,
+                                                                corretta: index === 0,
+                                                                testo: testo.trim()
+                                                            }))
+                                                    };
+    <% } else {%>
+                                                    jsonData = <%= domanda.getRisposte()%>;
+    <% }%>
+
+                                                    caricaRisposte(jsonData);
 </script>
 <script src="dist/assets/js/custom/logout.js"></script>
 </body>
