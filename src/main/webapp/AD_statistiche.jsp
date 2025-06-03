@@ -207,13 +207,11 @@
         <br>
 
         <div class="container-fluid">
+            <h4 class="text-center" style="font-weight: bold">Statistiche utenti</h4>
+            <br>
             <div class="card-wrapper">
                 <div class="card card-bg mb-6">
                     <div class="card card-header text-center">
-                        <br>
-                        <h4 class="card-title" style="font-weight: normal">
-                            Statistiche utenti
-                        </h4>
                     </div>
 
                     <div class="container">

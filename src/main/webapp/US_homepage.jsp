@@ -198,9 +198,10 @@
 
 
         <br>
+        <br>
 
         <div class="container">
-            <h4 class="text-center" style="font-weight: normal">Ciao <%= utente.getNome()%>!</h4>
+            <h4 class="text-center" style="font-weight: bold">Ciao <%= utente.getNome()%>!</h4>
             <br>
 
             <div class="row">

@@ -211,9 +211,10 @@
         </header>
 
         <br>
+        <br>
 
         <div class="container">
-            <h4 class="text-center">Modifica domande</h4>
+            <h4 class="text-center" style="font-weight: bold">Modifica domande</h4>
             <br>
 
             <div class="row">
