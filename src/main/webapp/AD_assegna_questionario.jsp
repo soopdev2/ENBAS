@@ -84,7 +84,7 @@
                                             <svg class="icon" aria-hidden="true"><use href="dist/svg/sprites.svg#it-pa"></use></svg>
                                             <div class="it-brand-text">
                                                <div class="it-brand-title">SuperQuizzone</div>
-<div class="it-brand-tagline d-none d-md-block">//</div> 
+                                               <div class="it-brand-tagline d-none d-md-block">//</div> 
                                             </div>
                                         </a>
                                     </div>
