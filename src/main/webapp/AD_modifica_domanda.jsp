@@ -46,10 +46,6 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link rel="icon" type="image/png" href="dist/img/favicon/favicon-96x96.png" sizes="96x96" />
-        <link rel="icon" type="image/svg+xml" href="dist/img/favicon/favicon.svg" />
-        <link rel="shortcut icon" href="dist/img/favicon/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="dist/img/favicon/apple-touch-icon.png" />
         <link rel="stylesheet" href="dist/assets/css/bootstrap-italia.min.css"/>
         <link rel="stylesheet" href="dist/assets/css/custom/global.css"/>
         <link href='https://fonts.googleapis.com/css?family=Titillium Web' rel='stylesheet'>
@@ -93,8 +89,8 @@
                                         <a href="#">
                                             <svg class="icon" aria-hidden="true"><use href="dist/svg/sprites.svg#it-pa"></use></svg>
                                             <div class="it-brand-text">
-                                                <div class="it-brand-title">ENBAS</div>
-                                                <div class="it-brand-tagline d-none d-md-block">QUESTIONARI DIGICOMP 2.2</div>
+                                               <div class="it-brand-title">SuperQuizzone</div>
+<div class="it-brand-tagline d-none d-md-block">//</div> 
                                             </div>
                                         </a>
                                     </div>
@@ -211,10 +207,9 @@
         </header>
 
         <br>
-        <br>
 
         <div class="container">
-            <h4 class="text-center" style="font-weight: bold">Modifica domande</h4>
+            <h4 class="text-center">Modifica domande</h4>
             <br>
 
             <div class="row">
@@ -462,11 +457,10 @@
 </div>
 
 
-<% String apiKey = Utils.config.getString("tiny_mce_api_key");%>
 <script src="dist/assets/js/bootstrap-italia.bundle.min.js"></script>
 <script src="dist/assets/js/external/jquery-3.7.1.js"></script>
 <script src="dist/assets/js/external/select2.min.js"></script>
-<script src="https://cdn.tiny.cloud/1/<%= apiKey%>/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/tbnutsowolzn3f1fnn0597qd5fvo68ivw52yw2gnafphfpi8/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <script src="dist/assets/js/custom/ad_modifica_domanda.js"></script>
 <script src="dist/assets/js/custom/globalModal.js"></script>
 <script>
@@ -523,24 +517,9 @@
                                                         competenzaSelect.trigger('change');
                                                     });
 
-                                                    let jsonData;
-
-    <% if (domanda.getOpzioni() != null && domanda.getRisposte() == null) {%>
-                                                    const opzioniString = "<%= domanda.getOpzioni().replace("\"", "\\\"").replace("\n", "").replace("\r", "")%>";
-                                                    const opzioniArray = opzioniString.split(",");
-
-                                                    jsonData = {
-                                                        risposte: opzioniArray.map((testo, index) => ({
-                                                                id: index + 1,
-                                                                corretta: index === 0,
-                                                                testo: testo.trim()
-                                                            }))
-                                                    };
-    <% } else {%>
-                                                    jsonData = <%= domanda.getRisposte()%>;
-    <% }%>
-
+                                                    var jsonData = <%= domanda.getRisposte()%>;
                                                     caricaRisposte(jsonData);
+
 </script>
 <script src="dist/assets/js/custom/logout.js"></script>
 </body>

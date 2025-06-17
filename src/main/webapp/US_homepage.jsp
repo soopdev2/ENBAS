@@ -38,10 +38,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link rel="stylesheet" href="dist/assets/css/bootstrap-italia.min.css"/>
         <link rel="stylesheet" href="dist/assets/css/custom/global.css"/>
-        <link rel="icon" type="image/png" href="dist/img/favicon/favicon-96x96.png" sizes="96x96" />
-        <link rel="icon" type="image/svg+xml" href="dist/img/favicon/favicon.svg" />
-        <link rel="shortcut icon" href="dist/img/favicon/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="dist/img/favicon/apple-touch-icon.png" />
         <link href='https://fonts.googleapis.com/css?family=Titillium Web' rel='stylesheet'>
         <title>Homepage</title>
     </head>
@@ -83,8 +79,8 @@
                                         <a href="#">
                                             <svg class="icon" aria-hidden="true"><use href="dist/svg/sprites.svg#it-pa"></use></svg>
                                             <div class="it-brand-text">
-                                                <div class="it-brand-title">ENBAS</div>
-                                                <div class="it-brand-tagline d-none d-md-block">QUESTIONARI DIGICOMP 2.2</div>
+                                               <div class="it-brand-title">SuperQuizzone</div>
+<div class="it-brand-tagline d-none d-md-block">//</div> 
                                             </div>
                                         </a>
                                     </div>
@@ -198,10 +194,9 @@
 
 
         <br>
-        <br>
 
         <div class="container">
-            <h4 class="text-center" style="font-weight: bold">Ciao <%= utente.getNome()%>!</h4>
+            <h4 class="text-center" style="font-weight: normal">Ciao <%= utente.getNome()%>!</h4>
             <br>
 
             <div class="row">

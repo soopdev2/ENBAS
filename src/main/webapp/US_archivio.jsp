@@ -40,10 +40,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <link rel="stylesheet" href="dist/assets/css/bootstrap-italia.min.css"/>
         <link rel="stylesheet" href="dist/assets/css/custom/global.css"/>
-        <link rel="icon" type="image/png" href="dist/img/favicon/favicon-96x96.png" sizes="96x96" />
-        <link rel="icon" type="image/svg+xml" href="dist/img/favicon/favicon.svg" />
-        <link rel="shortcut icon" href="dist/img/favicon/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="dist/img/favicon/apple-touch-icon.png" />
         <link href='https://fonts.googleapis.com/css?family=Titillium Web' rel='stylesheet'>
         <link rel="stylesheet" href="dist/assets/css/external/dataTables.bootstrap5.css"/>
         <title>Archivio questionari</title>
@@ -86,8 +82,8 @@
                                         <a href="#">
                                             <svg class="icon" aria-hidden="true"><use href="dist/svg/sprites.svg#it-pa"></use></svg>
                                             <div class="it-brand-text">
-                                                <div class="it-brand-title">ENBAS</div>
-                                                <div class="it-brand-tagline d-none d-md-block">QUESTIONARI DIGICOMP 2.2</div>
+                                               <div class="it-brand-title">SuperQuizzone</div>
+<div class="it-brand-tagline d-none d-md-block">//</div> 
                                             </div>
                                         </a>
                                     </div>
@@ -198,15 +194,17 @@
             </div>
         </header>
 
-        <br>
+
         <br>
 
         <div class="container-fluid">
-            <h4 class="text-center" style="font-weight: bold">Assegna questionario</h4>
-            <br>
             <div class="card-wrapper">
                 <div class="card card-bg mb-6">
                     <div class="card card-header text-center">
+                        <br>
+                        <h4 class="card-title" style="font-weight: normal">
+                            Archivio questionari
+                        </h4>
                     </div>
 
                     <form method="POST" action="QuestionarioServlet">
