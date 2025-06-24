@@ -162,7 +162,7 @@ public class JPAUtil {
         EntityManager em2 = this.getEm();
         try {
             TypedQuery<Utente> query = em2.createQuery(
-                    "SELECT u FROM Utente WHERE u.username = :username",
+                    "SELECT u FROM Utente u WHERE u.username = :username",
                     Utente.class
             ).setParameter("username", clientId);
 
@@ -329,16 +329,22 @@ public class JPAUtil {
 
     public boolean deleteDomandaById(Long domandaId) {
         EntityManager em2 = this.getEm();
+
         try {
 
             Domanda domanda = em2.find(Domanda.class, domandaId);
+            em2.getTransaction().begin();
 
             if (domanda != null) {
                 em2.remove(domanda);
+                em2.getTransaction().commit();
                 return true;
             }
 
         } catch (Exception e) {
+            if (em2.getTransaction().isActive()) {
+                em2.getTransaction().rollback();
+            }
             LOGGER.error("Non è stato possibile effettuare l'eliminazione della domanda con id " + domandaId + "\n" + Utils.estraiEccezione(e));
         } finally {
             if (em2 != null) {

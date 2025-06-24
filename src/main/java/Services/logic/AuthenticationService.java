@@ -261,7 +261,7 @@ public class AuthenticationService {
                 .setIssuedAt(Date.from(now))
                 .setExpiration(expirationDate)
                 .claim("token_type", tokenType)
-                .claim("role", ruolo)
+                .claim("ruolo", ruolo)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 

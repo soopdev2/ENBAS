@@ -1,0 +1,202 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package Enbas.Controllers;
+
+import Entity.Categoria;
+import Entity.Competenza;
+import Utils.JPAUtil;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
+import Entity.Domanda;
+import Services.Filter.RolesAllowedCustom;
+import Services.Filter.Secured;
+import Utils.Utils;
+import com.google.gson.JsonObject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Salvatore
+ */
+@Path("/domanda")
+public class DomandaController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DomandaController.class.getName());
+
+    @GET
+    @Path("/findById/{id}")
+    @Secured
+    @RolesAllowedCustom({1, 2})
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findById(@PathParam("id") Long id, @HeaderParam("Authorization") String authorizationHeader) {
+        try {
+            JPAUtil jpaUtil = new JPAUtil();
+            Domanda domanda = jpaUtil.findDomandaById(id);
+
+            if (domanda == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("{\"error\":\"Domanda non trovata\"}")
+                        .build();
+            }
+            JsonObject json = new JsonObject();
+            json.addProperty("id", domanda.getId());
+            if (domanda.getTitolo() != null) {
+                json.addProperty("titolo", domanda.getTitolo());
+            }
+            if (domanda.getNome_domanda() != null) {
+                json.addProperty("nome", domanda.getNome_domanda());
+            }
+            if (domanda.getDescrizione() != null) {
+                json.addProperty("descrizione", domanda.getDescrizione());
+            }
+            if (domanda.getOpzioni() != null) {
+                json.addProperty("opzioni", domanda.getOpzioni());
+            }
+            if (domanda.getCategoria() != null && domanda.getCategoria().getNome() != null) {
+                json.addProperty("area", domanda.getCategoria().getNome());
+            }
+            if (domanda.getCompetenza() != null
+                    && domanda.getCompetenza().getAreeCompetenze() != null
+                    && domanda.getCompetenza().getAreeCompetenze().getNome() != null) {
+                json.addProperty("competenza", "area competenza " + domanda.getCompetenza().getAreeCompetenze().getNome() + " - "
+                        + "descrizione competenza " + domanda.getCompetenza().getDescrizione()
+                        + "\n - livello - "
+                        + domanda.getCompetenza().getLivello());
+            }
+
+            return Response.ok(json.toString()).build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.serverError().entity("{\"error\": \"Errore interno\"}").build();
+        }
+    }
+
+    @POST
+    @Path("/create")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Secured
+    @RolesAllowedCustom({1})
+    public Response createDomanda(
+            @FormParam("area") String area_id_param,
+            @FormParam("abilità_competenza") String abilità_competenza_param,
+            @FormParam("stato") String stato,
+            @FormParam("titolo") String titolo,
+            @FormParam("nome_domanda") String nome_domanda,
+            @FormParam("risposta_text") List<String> risposta_text,
+            @FormParam("si_no_select") List<String> si_no_select
+    ) {
+        JPAUtil jpaUtil = new JPAUtil();
+        Long areaId = Utils.tryParseLong(area_id_param);
+        Categoria categoria = jpaUtil.findCategoriaById(areaId);
+
+        Long abilità_competenza_id = Utils.tryParseLong(abilità_competenza_param);
+        Competenza competenza = jpaUtil.findCompetenzaById(abilità_competenza_id);
+
+        jpaUtil.creaDomanda(categoria, competenza, stato, titolo, nome_domanda,
+                risposta_text.toArray(new String[0]),
+                si_no_select.toArray(new String[0]),
+                LOGGER);
+
+        return Response.ok().entity("{\"status\":\"success\"}").build();
+    }
+
+    @PATCH
+    @Path("/update")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Secured
+    @RolesAllowedCustom({1})
+    public Response updateDomanda(
+            @PathParam("domanda_id") String domanda_id_param,
+            @FormParam("area") String area_id_param,
+            @FormParam("competenza") String competenza_param,
+            @FormParam("stato") String stato,
+            @FormParam("titolo") String titolo,
+            @FormParam("nome_domanda") String nome_domanda,
+            @FormParam("risposta_text[]") List<String> risposta_text,
+            @FormParam("si_no_select[]") List<String> si_no_select,
+            @FormParam("id_risposta[]") List<String> idRisposte
+    ) {
+        JPAUtil jpaUtil = new JPAUtil();
+
+        try {
+            Long domanda_id = Utils.tryParseLong(domanda_id_param);
+            Long areaId = Utils.tryParseLong(area_id_param);
+            Long competenza_id = Utils.tryParseLong(competenza_param);
+
+            Categoria categoria = jpaUtil.findCategoriaById(areaId);
+            Competenza competenza = jpaUtil.findCompetenzaById(competenza_id);
+
+            jpaUtil.modificaDomanda(
+                    domanda_id,
+                    categoria,
+                    competenza,
+                    stato,
+                    titolo,
+                    nome_domanda,
+                    risposta_text.toArray(new String[0]),
+                    idRisposte.toArray(new String[0]),
+                    si_no_select.toArray(new String[0]),
+                    LOGGER
+            );
+
+            return Response.ok("{\"status\":\"success\"}").build();
+
+        } catch (Exception e) {
+            LOGGER.error("Errore durante l'aggiornamento della domanda", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"Errore interno\"}")
+                    .build();
+        }
+    }
+
+    @DELETE
+    @Path("/delete/{id}")
+    @Secured
+    @RolesAllowedCustom({1})
+    public Response delete(@PathParam("id") Long id, @HeaderParam("Authorization") String authorizationHeader) {
+        try {
+            JPAUtil jpaUtil = new JPAUtil();
+
+            Domanda domanda = jpaUtil.findDomandaById(id);
+            if (domanda == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("{\"error\":\"Domanda non trovata\"}")
+                        .build();
+            }
+
+            boolean deleted = jpaUtil.deleteDomandaById(id);
+            if (deleted) {
+                return Response.ok("{\"message\":\"Domanda eliminata con successo\"}").build();
+            } else {
+                return Response.serverError()
+                        .entity("{\"error\":\"Errore durante l'eliminazione della domanda\"}")
+                        .build();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.serverError()
+                    .entity("{\"error\":\"Errore interno durante l'eliminazione della domanda\"}")
+                    .build();
+        }
+    }
+
+}

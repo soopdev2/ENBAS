@@ -50,7 +50,7 @@ public class JWTAuthenticationFilter implements ContainerRequestFilter {
                             .getBody();
 
                     String username = claims.getSubject();
-                    Long ruolo = claims.get("ruolo", Long.class);
+                    int ruolo = claims.get("ruolo", Integer.class);
 
                     requestContext.setProperty("username", username);
                     requestContext.setProperty("ruolo", ruolo);
@@ -62,7 +62,7 @@ public class JWTAuthenticationFilter implements ContainerRequestFilter {
 
                     if (rolesAnnotation != null) {
                         boolean autorizzato = false;
-                        for (long r : rolesAnnotation.value()) {
+                        for (int r : rolesAnnotation.value()) {
                             if (r == ruolo) {
                                 autorizzato = true;
                                 break;
@@ -80,8 +80,10 @@ public class JWTAuthenticationFilter implements ContainerRequestFilter {
 
             } catch (SignatureException | io.jsonwebtoken.ExpiredJwtException e) {
                 abort(requestContext, "Token non valido o scaduto");
+                e.printStackTrace();
             } catch (Exception e) {
                 abort(requestContext, "Errore durante la validazione del token");
+                e.printStackTrace();
             }
         }
     }
