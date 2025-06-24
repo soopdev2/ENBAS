@@ -52,6 +52,10 @@
         <link rel="stylesheet" href="dist/assets/css/external/select2.min.css" />
         <link rel="stylesheet" href="dist/assets/css/external/select2-bootstrap-5-theme.min.css" />
         <link rel="stylesheet" href="dist/assets/css/external/dataTables.bootstrap5.css"/>
+        <link rel="apple-touch-icon" sizes="180x180" href="dist/img/favicon1/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="dist/img/favicon1/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="dist/img/favicon1/favicon-16x16.png">
+        <link rel="manifest" href="dist/img/favicon1/site.webmanifest">
         <style>
             td{
                 max-width: 20em;
@@ -98,32 +102,10 @@
                                         <a href="#">
                                             <svg class="icon" aria-hidden="true"><use href="dist/svg/sprites.svg#it-pa"></use></svg>
                                             <div class="it-brand-text">
-                                                <div class="it-brand-title">SuperQuizzone</div>
-                                                <div class="it-brand-tagline d-none d-md-block">//</div> 
+                                                <div class="it-brand-title">SkillProof</div>
+                                                <div class="it-brand-tagline d-none d-md-block">Digicomp 2.2</div> 
                                             </div>
                                         </a>
-                                    </div>
-                                    <div class="it-right-zone">
-                                        <div class="it-socials d-none d-md-flex">
-                                            <span>Seguici su</span>
-                                            <ul>
-                                                <li>
-                                                    <a href="#" aria-label="Facebook" target="_blank">
-                                                        <svg class="icon"><use href="dist/svg/sprites.svg#it-facebook"></use></svg>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href="#" aria-label="Github" target="_blank">
-                                                        <svg class="icon"><use href="dist/svg/sprites.svg#it-github"></use></svg>
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href="#" aria-label="Twitter" target="_blank">
-                                                        <svg class="icon"><use href="dist/svg/sprites.svg#it-twitter"></use></svg>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
                                     </div>
                                 </div>
                             </div>

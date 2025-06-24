@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
+import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -46,7 +47,18 @@ public class Utente implements Serializable {
 
     @ManyToMany(mappedBy = "utenti")
     private List<Questionario> questionari;
-    
+
+    private String refreshToken;
+
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
     public Long getId() {
         return id;
     }
@@ -118,7 +130,7 @@ public class Utente implements Serializable {
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 0;

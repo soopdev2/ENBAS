@@ -9,6 +9,10 @@
         <link rel="stylesheet" href="dist/assets/css/bootstrap-italia.min.css"/>
         <link rel="stylesheet" href="dist/assets/css/custom/global.css"/>
         <link href='https://fonts.googleapis.com/css?family=Titillium Web' rel='stylesheet'>
+        <link rel="apple-touch-icon" sizes="180x180" href="dist/img/favicon1/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="dist/img/favicon1/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="dist/img/favicon1/favicon-16x16.png">
+        <link rel="manifest" href="dist/img/favicon1/site.webmanifest">
         <style>
             body {
                 font-family: 'Inter', sans-serif;
@@ -31,7 +35,7 @@
             .error-container h1 {
                 font-size: 72px;
                 font-weight: 700;
-                color: #ff4d4d;
+                color: #CC334D;
             }
             .error-container p {
                 font-size: 18px;
