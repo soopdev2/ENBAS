@@ -364,7 +364,7 @@
                 <version>3.14.0</version>
                 <configuration>
                     <debug>false</debug>
-                    <release>22</release>
+                    <release>17</release>
                 </configuration>
             </plugin>
             <plugin>

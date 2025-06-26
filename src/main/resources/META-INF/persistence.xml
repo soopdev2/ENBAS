@@ -56,7 +56,7 @@
             <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/gestionale_questionario"/>
                         
             
-            <!--            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://db.smartnova.it:3306/gestionale_questionario"/>-->
+            <!--  <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://db.smartnova.it:3306/gestionale_questionario"/>-->
                                     
             
             <property name="jakarta.persistence.jdbc.user" value="gestionale_questionario"/>

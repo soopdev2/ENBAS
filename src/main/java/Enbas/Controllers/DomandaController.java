@@ -37,18 +37,16 @@ public class DomandaController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DomandaController.class.getName());
 
-    @GET
-    @Path("/findById/{id}")
+    @POST
+    @Path("/findById")
     @Secured
     @RolesAllowedCustom({1, 2})
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response findById(@PathParam("id") Long id, @HeaderParam("Authorization") String authorizationHeader) {
+    public Response findById(@FormParam("id") Long id, @HeaderParam("Authorization") String authorizationHeader) {
         try {
             JPAUtil jpaUtil = new JPAUtil();
             Domanda domanda = jpaUtil.findDomandaById(id);
-
-            if (domanda == null) {
+           if (domanda == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity("{\"error\":\"Domanda non trovata\"}")
                         .build();
