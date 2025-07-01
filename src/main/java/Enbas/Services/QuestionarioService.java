@@ -63,78 +63,14 @@ import org.slf4j.Logger;
  */
 public class QuestionarioService {
 
-    public void assegnaQuestionarioCategoria(String categoriaSelect, String numeroDomande, String[] assegna_questionario_select_utente, Logger logger) {
+    public void assegnaQuestionarioDigicomp(String[] assegna_questionario_select_utente, Logger logger) {
         JPAUtil jPAUtil = new JPAUtil();
         EntityManager em = jPAUtil.getEm();
 
         try {
             em.getTransaction().begin();
 
-            Long categoria_id = Utils.tryParseLong(categoriaSelect);
-            Categoria categoria = em.find(Categoria.class, categoria_id);
-
-            TypedQuery<Domanda> query = em.createQuery("SELECT d FROM Domanda d WHERE d.categoria.id = :categoriaId AND d.visibilità_domanda = :visibilità", Domanda.class)
-                    .setParameter("categoriaId", categoria.getId())
-                    .setParameter("visibilità", Visibilità_domanda.VISIBILE);
-
-            List<Domanda> domande = query.getResultList();
-
-            Collections.shuffle(domande);
-
-            int numero = Utils.tryParseInt(numeroDomande);
-            List<Domanda> domandeSelezionate = domande.subList(0, Math.min(numero, domande.size()));
-
-            for (String userIdStr : assegna_questionario_select_utente) {
-                Long userId = Utils.tryParseLong(userIdStr);
-                Utente utente = em.find(Utente.class, userId);
-
-                if (utente != null) {
-                    Questionario ultimo_questionario = jPAUtil.findUtenteQuestionarioIdByUserId(userId);
-                    if (ultimo_questionario != null && ultimo_questionario.getDescrizione().equals(Stato_questionario.COMPLETATO)
-                            && ultimo_questionario.getStatus() == 3 || ultimo_questionario == null) {
-
-                        Questionario questionario = new Questionario();
-                        questionario.setUtenti(List.of(utente));
-
-                        questionario.setCategoria(List.of(categoria));
-                        questionario.setStatus(0);
-                        questionario.setDescrizione(Stato_questionario.ASSEGNATO);
-
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                        Date date = new Date();
-                        String formattedDate = sdf.format(date);
-                        questionario.setDataDiAssegnazione(formattedDate);
-                        questionario.setDomande(domandeSelezionate);
-
-                        em.persist(questionario);
-
-                    }
-                }
-            }
-
-            em.getTransaction().commit();
-
-        } catch (Exception e) {
-            em.getTransaction().rollback();
-            logger.error("Non è stato possibile assegnare un nuovo questionario di tipo Categoria" + "\n" + Utils.estraiEccezione(e));
-        } finally {
-            if (em != null) {
-                if (em.getTransaction().isActive()) {
-                    em.getTransaction().rollback();
-                }
-                em.close();
-            }
-        }
-    }
-
-    public void assegnaQuestionarioDigicomp(String digicompSelect, String[] assegna_questionario_select_utente, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
-
-        try {
-            em.getTransaction().begin();
-
-            Long digicomp_id = Utils.tryParseLong(digicompSelect);
+            Long digicomp_id = Utils.tryParseLong("1");
             Digicomp digicomp = em.find(Digicomp.class, digicomp_id);
 
             TypedQuery<Domanda> query = em.createQuery(
@@ -475,7 +411,7 @@ public class QuestionarioService {
                 em.merge(questionario);
             }
             em.getTransaction().commit();
-            logger.info("Progressi salvati per userId " + userId);
+            logger.info("Progressi del questionario salvati con successo per l'utente con id " + userId);
         } catch (Exception e) {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();

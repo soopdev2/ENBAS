@@ -8,12 +8,11 @@ import Entity.Categoria;
 import Entity.Competenza;
 import Utils.JPAUtil;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 import Entity.Domanda;
-import Services.Filter.RolesAllowedCustom;
+import Entity.Utente;
+import Enum.Tipo_inserimento;
 import Services.Filter.Secured;
 import Utils.Utils;
 import com.google.gson.JsonObject;
@@ -40,58 +39,69 @@ public class DomandaController {
     @POST
     @Path("/findById")
     @Secured
-    @RolesAllowedCustom({1, 2})
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response findById(@FormParam("id") Long id, @HeaderParam("Authorization") String authorizationHeader) {
+    public Response findById(@FormParam("userId") Long userId, @FormParam("domanda_id") Long id, @HeaderParam("Authorization") String authorizationHeader) {
         try {
             JPAUtil jpaUtil = new JPAUtil();
-            Domanda domanda = jpaUtil.findDomandaById(id);
-           if (domanda == null) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"error\":\"Domanda non trovata\"}")
-                        .build();
-            }
-            JsonObject json = new JsonObject();
-            json.addProperty("id", domanda.getId());
-            if (domanda.getTitolo() != null) {
-                json.addProperty("titolo", domanda.getTitolo());
-            }
-            if (domanda.getNome_domanda() != null) {
-                json.addProperty("nome", domanda.getNome_domanda());
-            }
-            if (domanda.getDescrizione() != null) {
-                json.addProperty("descrizione", domanda.getDescrizione());
-            }
-            if (domanda.getOpzioni() != null) {
-                json.addProperty("opzioni", domanda.getOpzioni());
-            }
-            if (domanda.getCategoria() != null && domanda.getCategoria().getNome() != null) {
-                json.addProperty("area", domanda.getCategoria().getNome());
-            }
-            if (domanda.getCompetenza() != null
-                    && domanda.getCompetenza().getAreeCompetenze() != null
-                    && domanda.getCompetenza().getAreeCompetenze().getNome() != null) {
-                json.addProperty("competenza", "area competenza " + domanda.getCompetenza().getAreeCompetenze().getNome() + " - "
-                        + "descrizione competenza " + domanda.getCompetenza().getDescrizione()
-                        + "\n - livello - "
-                        + domanda.getCompetenza().getLivello());
-            }
+            Utente utente = jpaUtil.findUserByUserId(userId.toString());
+            if (utente.getRuolo().getId() == 1) {
+                Domanda domanda = jpaUtil.findDomandaById(id);
+                if (domanda == null) {
+                    return Response.status(Response.Status.NOT_FOUND)
+                            .entity("{\"error\":\"Domanda non trovata\"}")
+                            .build();
+                }
+                JsonObject json = new JsonObject();
+                json.addProperty("id", domanda.getId());
+                if (domanda.getTitolo() != null) {
+                    json.addProperty("titolo", domanda.getTitolo());
+                }
+                if (domanda.getNome_domanda() != null) {
+                    json.addProperty("nome", domanda.getNome_domanda());
+                }
 
-            return Response.ok(json.toString()).build();
+                if (domanda.getTipo_inserimento() != null) {
+                    json.addProperty("tipo_inserimento", domanda.getTipo_inserimento().name());
+                }
+                if (domanda.getDescrizione() != null) {
+                    json.addProperty("descrizione", domanda.getDescrizione());
+                }
+                if (domanda.getOpzioni() != null && domanda.getTipo_inserimento().equals(Tipo_inserimento.MANUALE)) {
+                    json.addProperty("opzioni", domanda.getOpzioni());
+                } else {
+                    json.addProperty("opzioni", domanda.getRisposte());
+                }
+                if (domanda.getCategoria() != null && domanda.getCategoria().getNome() != null) {
+                    json.addProperty("area", domanda.getCategoria().getNome());
+                }
+                if (domanda.getCompetenza() != null
+                        && domanda.getCompetenza().getAreeCompetenze() != null
+                        && domanda.getCompetenza().getAreeCompetenze().getNome() != null) {
+                    json.addProperty("competenza", "area competenza " + domanda.getCompetenza().getAreeCompetenze().getNome() + " - "
+                            + "descrizione competenza " + domanda.getCompetenza().getDescrizione()
+                            + "\n - livello - "
+                            + domanda.getCompetenza().getLivello());
+                }
+
+                return Response.ok(json.toString()).build();
+            } else {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
+            }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Errore nella ricerca della domanda con id " + id, e);
             return Response.serverError().entity("{\"error\": \"Errore interno\"}").build();
         }
     }
 
     @POST
     @Path("/create")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Secured
-    @RolesAllowedCustom({1})
     public Response createDomanda(
+            @FormParam("userId") Long userId,
             @FormParam("area") String area_id_param,
             @FormParam("abilità_competenza") String abilità_competenza_param,
             @FormParam("stato") String stato,
@@ -101,18 +111,23 @@ public class DomandaController {
             @FormParam("si_no_select") List<String> si_no_select
     ) {
         JPAUtil jpaUtil = new JPAUtil();
-        Long areaId = Utils.tryParseLong(area_id_param);
-        Categoria categoria = jpaUtil.findCategoriaById(areaId);
+        Utente utente = jpaUtil.findUserByUserId(userId.toString());
+        if (utente.getRuolo().getId() == 1) {
+            Long areaId = Utils.tryParseLong(area_id_param);
+            Categoria categoria = jpaUtil.findCategoriaById(areaId);
 
-        Long abilità_competenza_id = Utils.tryParseLong(abilità_competenza_param);
-        Competenza competenza = jpaUtil.findCompetenzaById(abilità_competenza_id);
+            Long abilità_competenza_id = Utils.tryParseLong(abilità_competenza_param);
+            Competenza competenza = jpaUtil.findCompetenzaById(abilità_competenza_id);
 
-        jpaUtil.creaDomanda(categoria, competenza, stato, titolo, nome_domanda,
-                risposta_text.toArray(new String[0]),
-                si_no_select.toArray(new String[0]),
-                LOGGER);
+            jpaUtil.creaDomanda(categoria, competenza, stato, titolo, nome_domanda,
+                    risposta_text.toArray(new String[0]),
+                    si_no_select.toArray(new String[0]),
+                    LOGGER);
 
-        return Response.ok().entity("{\"status\":\"success\"}").build();
+            return Response.ok().entity("{\"status\":\"success\"}").build();
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
+        }
     }
 
     @PATCH
@@ -120,80 +135,93 @@ public class DomandaController {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     @Secured
-    @RolesAllowedCustom({1})
     public Response updateDomanda(
-            @PathParam("domanda_id") String domanda_id_param,
+            @FormParam("userId") Long userId,
+            @FormParam("domanda_id") String domanda_id_param,
             @FormParam("area") String area_id_param,
-            @FormParam("competenza") String competenza_param,
+            @FormParam("abilità_competenza") String competenza_param,
             @FormParam("stato") String stato,
             @FormParam("titolo") String titolo,
             @FormParam("nome_domanda") String nome_domanda,
-            @FormParam("risposta_text[]") List<String> risposta_text,
-            @FormParam("si_no_select[]") List<String> si_no_select,
-            @FormParam("id_risposta[]") List<String> idRisposte
+            @FormParam("risposta_text") List<String> risposta_text,
+            @FormParam("si_no_select") List<String> si_no_select,
+            @FormParam("id_risposta") List<String> idRisposte
     ) {
         JPAUtil jpaUtil = new JPAUtil();
+        Utente utente = jpaUtil.findUserByUserId(userId.toString());
+        if (utente.getRuolo().getId() == 1) {
 
-        try {
-            Long domanda_id = Utils.tryParseLong(domanda_id_param);
-            Long areaId = Utils.tryParseLong(area_id_param);
-            Long competenza_id = Utils.tryParseLong(competenza_param);
+            try {
+                Long domanda_id = Utils.tryParseLong(domanda_id_param);
+                Long areaId = Utils.tryParseLong(area_id_param);
+                Long competenza_id = Utils.tryParseLong(competenza_param);
 
-            Categoria categoria = jpaUtil.findCategoriaById(areaId);
-            Competenza competenza = jpaUtil.findCompetenzaById(competenza_id);
+                Categoria categoria = jpaUtil.findCategoriaById(areaId);
+                Competenza competenza = jpaUtil.findCompetenzaById(competenza_id);
 
-            jpaUtil.modificaDomanda(
-                    domanda_id,
-                    categoria,
-                    competenza,
-                    stato,
-                    titolo,
-                    nome_domanda,
-                    risposta_text.toArray(new String[0]),
-                    idRisposte.toArray(new String[0]),
-                    si_no_select.toArray(new String[0]),
-                    LOGGER
-            );
+                jpaUtil.modificaDomanda(
+                        domanda_id,
+                        categoria,
+                        competenza,
+                        stato,
+                        titolo,
+                        nome_domanda,
+                        risposta_text.toArray(new String[0]),
+                        idRisposte.toArray(new String[0]),
+                        si_no_select.toArray(new String[0]),
+                        LOGGER
+                );
 
-            return Response.ok("{\"status\":\"success\"}").build();
+                return Response.ok("{\"status\":\"success\"}").build();
 
-        } catch (Exception e) {
-            LOGGER.error("Errore durante l'aggiornamento della domanda", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Errore interno\"}")
-                    .build();
+            } catch (Exception e) {
+                LOGGER.error("Errore durante l'aggiornamento della domanda", e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("{\"error\":\"Errore interno\"}")
+                        .build();
+            }
+
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
         }
     }
 
     @DELETE
-    @Path("/delete/{id}")
+    @Path("/delete")
     @Secured
-    @RolesAllowedCustom({1})
-    public Response delete(@PathParam("id") Long id, @HeaderParam("Authorization") String authorizationHeader) {
-        try {
-            JPAUtil jpaUtil = new JPAUtil();
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response delete(@FormParam("userId") Long userId, @FormParam("domanda_id") Long domanda_id, @HeaderParam("Authorization") String authorizationHeader
+    ) {
+        JPAUtil jpaUtil = new JPAUtil();
+        Utente utente = jpaUtil.findUserByUserId(userId.toString());
+        if (utente.getRuolo().getId() == 1) {
+            try {
 
-            Domanda domanda = jpaUtil.findDomandaById(id);
-            if (domanda == null) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"error\":\"Domanda non trovata\"}")
-                        .build();
-            }
+                Domanda domanda = jpaUtil.findDomandaById(domanda_id);
+                if (domanda == null) {
+                    return Response.status(Response.Status.NOT_FOUND)
+                            .entity("{\"error\":\"Domanda non trovata\"}")
+                            .build();
+                }
 
-            boolean deleted = jpaUtil.deleteDomandaById(id);
-            if (deleted) {
-                return Response.ok("{\"message\":\"Domanda eliminata con successo\"}").build();
-            } else {
+                boolean deleted = jpaUtil.deleteDomandaById(domanda_id);
+                if (deleted) {
+                    return Response.ok("{\"message\":\"Domanda eliminata con successo\"}").build();
+                } else {
+                    return Response.serverError()
+                            .entity("{\"error\":\"Errore durante l'eliminazione della domanda\"}")
+                            .build();
+                }
+
+            } catch (Exception e) {
+                LOGGER.error("Errore interno durante l'eliminazione della domanda", e.getMessage());
                 return Response.serverError()
-                        .entity("{\"error\":\"Errore durante l'eliminazione della domanda\"}")
+                        .entity("{\"error\":\"Errore interno durante l'eliminazione della domanda\"}")
                         .build();
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.serverError()
-                    .entity("{\"error\":\"Errore interno durante l'eliminazione della domanda\"}")
-                    .build();
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
         }
     }
 

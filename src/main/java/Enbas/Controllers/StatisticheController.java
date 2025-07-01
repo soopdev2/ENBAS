@@ -5,11 +5,15 @@
 package Enbas.Controllers;
 
 import Enbas.Services.StatisticheService;
-import Services.Filter.RolesAllowedCustom;
+import Entity.Utente;
 import Services.Filter.Secured;
-import jakarta.ws.rs.GET;
+import Utils.JPAUtil;
+import Utils.Utils;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -20,48 +24,66 @@ import org.slf4j.LoggerFactory;
  *
  * @author Salvatore
  */
+@Path("/statistiche")
 public class StatisticheController {
 
     private final Logger LOGGER = LoggerFactory.getLogger(StatisticheController.class);
     private final StatisticheService statisticheService = new StatisticheService();
 
-    @GET
-    @Path("/utente/{userId}")
-    @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    @POST
+    @Path("/utente")
     @Secured
-    @RolesAllowedCustom({1})
-    public Response estraiExcelPerUtente(@PathParam("userId") Long utenteId) {
-        try {
-            byte[] excelData = statisticheService.estraiExcelPerUtente(utenteId, LOGGER);
+    @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response estraiExcelPerUtente(@FormParam("userId") Long userId, @FormParam("selectedUserId") Long selectedUserId, @HeaderParam("Authorization") String authorizationHeader) {
+        JPAUtil jpaUtil = new JPAUtil();
+        Utente utente = jpaUtil.findUserByUserId(userId.toString());
+        if (utente.getRuolo().getId() == 1 || utente.getRuolo().getId() == 2) {
+            if (utente.getRuolo().getId() == 2 && utente.getId().equals(selectedUserId)) {
+                try {
+                    byte[] excelData = statisticheService.estraiExcelPerUtente(selectedUserId, LOGGER);
+                    Utente selectedUser = jpaUtil.findUserByUserId(selectedUserId.toString());
 
-            return Response.ok(excelData)
-                    .header("Content-Disposition", "attachment; filename=\"statistiche_utente_" + utenteId + ".xlsx\"")
-                    .build();
-        } catch (Exception e) {
-            LOGGER.error("Errore nell'estrazione dell'Excel per l'utente " + utenteId, e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Errore durante l'estrazione dell'Excel.")
-                    .build();
+                    return Response.ok(excelData)
+                            .header("Content-Disposition", "attachment; filename=\"statistiche_utente_" + Utils.sanitize(selectedUser.getNome().toUpperCase()) + "_" + Utils.sanitize(selectedUser.getCognome().toUpperCase()) + ".xlsx\"")
+                            .build();
+                } catch (Exception e) {
+                    LOGGER.error("Errore nell'estrazione dell'Excel per l'utente " + selectedUserId, e);
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity("Errore durante l'estrazione dell'Excel.")
+                            .build();
+                }
+            } else {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Non puoi visualizzare le statistiche degli altri utenti.\"}").build();
+            }
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
         }
     }
 
-    @GET
+    @POST
     @Path("/digicomp/controlla")
     @Secured
-    @RolesAllowedCustom({1})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response controllaDigicomp() {
-        try {
-            statisticheService.controllaDigicompPerUtenti(LOGGER);
+    public Response controllaDigicomp(@FormParam("userId") Long userId, @HeaderParam("Authorization") String authorizationHeader
+    ) {
+        JPAUtil jpaUtil = new JPAUtil();
+        Utente utente = jpaUtil.findUserByUserId(userId.toString());
+        if (utente.getRuolo().getId() == 1) {
+            try {
+                statisticheService.controllaDigicompPerUtenti(LOGGER);
 
-            return Response.status(Response.Status.OK)
-                    .entity("{\"message\": \"Controllo completato con successo\"}")
-                    .build();
-        } catch (Exception e) {
-            LOGGER.error("Errore durante il controllo dei questionari Digicomp.", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"message\": \"Errore durante il controllo dei questionari Digicomp.\"}")
-                    .build();
+                return Response.status(Response.Status.OK)
+                        .entity("{\"message\": \"Controllo completato con successo\"}")
+                        .build();
+            } catch (Exception e) {
+                LOGGER.error("Errore durante il controllo dei questionari Digicomp.", e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("{\"message\": \"Errore durante il controllo dei questionari Digicomp.\"}")
+                        .build();
+            }
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
         }
     }
 }

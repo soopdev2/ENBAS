@@ -50,29 +50,8 @@ public class JWTAuthenticationFilter implements ContainerRequestFilter {
                             .getBody();
 
                     String username = claims.getSubject();
-                    int ruolo = claims.get("ruolo", Integer.class);
 
                     requestContext.setProperty("username", username);
-                    requestContext.setProperty("ruolo", ruolo);
-
-                    RolesAllowedCustom rolesAnnotation = method.getAnnotation(RolesAllowedCustom.class);
-                    if (rolesAnnotation == null) {
-                        rolesAnnotation = resourceInfo.getResourceClass().getAnnotation(RolesAllowedCustom.class);
-                    }
-
-                    if (rolesAnnotation != null) {
-                        boolean autorizzato = false;
-                        for (int r : rolesAnnotation.value()) {
-                            if (r == ruolo) {
-                                autorizzato = true;
-                                break;
-                            }
-                        }
-
-                        if (!autorizzato) {
-                            abort(requestContext, "Accesso negato: ruolo insufficiente");
-                        }
-                    }
 
                 } else {
                     abort(requestContext, "Token non valido");

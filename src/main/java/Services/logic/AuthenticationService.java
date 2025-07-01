@@ -2,6 +2,8 @@ package Services.logic;
 
 import Entity.Utente;
 import Utils.JPAUtil;
+import static Utils.Utils.calcolaScadenza;
+import static Utils.Utils.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -55,10 +57,8 @@ public class AuthenticationService {
 
         if (isValidCredentials(clientId, clientSecret)) {
             try {
-                JPAUtil jpaUtil = new JPAUtil();
-                Utente utente = jpaUtil.findUserByClientId(clientId);
-                String accessToken = generateToken(CLIENT_SECRET, "access_token", utente.getRuolo().getId());
-                String refreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token", utente.getRuolo().getId());
+                String accessToken = generateToken(CLIENT_SECRET, "access_token");
+                String refreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
                 saveRefreshTokenToDatabase(clientId, refreshToken);
                 refreshTokens.put(refreshToken, clientId);
                 Instant expirationInstant = getExpirationInstantFromToken(accessToken, clientSecret);
@@ -89,8 +89,8 @@ public class AuthenticationService {
             try {
                 JPAUtil jpaUtil = new JPAUtil();
                 Utente utente = jpaUtil.findUserByClientId(clientId);
-                String newAccessToken = generateToken(CLIENT_SECRET, "access_token", utente.getRuolo().getId());
-                String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token", utente.getRuolo().getId());
+                String newAccessToken = generateToken(CLIENT_SECRET, "access_token");
+                String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
 
                 saveRefreshTokenToDatabase(clientId, newRefreshToken);
 
@@ -109,34 +109,34 @@ public class AuthenticationService {
         }
     }
 
-    @GET
-    @Path("/auth")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response authenticate(@HeaderParam("Authorization") String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("{\"message\":\"Missing or invalid Authorization header. Expected Bearer token.\"}")
-                    .build();
-        }
-
-        String token = authorizationHeader.substring("Bearer ".length());
-
-        try {
-            if (isValidToken(token) && isAccessToken(token)) {
-                return Response.ok().entity("{\"message\":\"Authentication successful. Token is valid.\"}")
-                        .build();
-            } else {
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"message\":\"Invalid or expired access token.\"}")
-                        .build();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"message\":\"Error during token validation.\"}")
-                    .build();
-        }
-    }
+//    @GET
+//    @Path("/auth")
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response authenticate(@HeaderParam("Authorization") String authorizationHeader) {
+//        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+//            return Response.status(Response.Status.UNAUTHORIZED)
+//                    .entity("{\"message\":\"Missing or invalid Authorization header. Expected Bearer token.\"}")
+//                    .build();
+//        }
+//
+//        String token = authorizationHeader.substring("Bearer ".length());
+//
+//        try {
+//            if (isValidToken(token) && isAccessToken(token)) {
+//                return Response.ok().entity("{\"message\":\"Authentication successful. Token is valid.\"}")
+//                        .build();
+//            } else {
+//                return Response.status(Response.Status.UNAUTHORIZED)
+//                        .entity("{\"message\":\"Invalid or expired access token.\"}")
+//                        .build();
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+//                    .entity("{\"message\":\"Error during token validation.\"}")
+//                    .build();
+//        }
+//    }
 
     private boolean isValidRefreshToken(String clientId, String clientSecret, String refreshToken) {
         EntityManagerFactory entityManagerFactory = null;
@@ -160,8 +160,8 @@ public class AuthenticationService {
                 }
 
                 if (utente.getRefreshToken() != null && utente.getRefreshToken().equals(refreshToken)) {
-                    String newAccessToken = generateToken(CLIENT_SECRET, "access_token", utente.getRuolo().getId());
-                    String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token", utente.getRuolo().getId());
+                    String newAccessToken = generateToken(CLIENT_SECRET, "access_token");
+                    String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
                     utente.setRefreshToken(newRefreshToken);
 
                     entityManager.getTransaction().begin();
@@ -250,38 +250,38 @@ public class AuthenticationService {
         return null;
     }
 
-    public static String generateToken(String clientSecret, String tokenType, int ruolo) {
+    public static String generateToken(String clientSecret, String tokenType) {
+        String scadenza = config.getString("scadenza_token");
+        LocalDateTime scadenza_token = calcolaScadenza(scadenza);
         Key key = Keys.hmacShaKeyFor(clientSecret.getBytes());
         Instant now = Instant.now();
-        Instant expirationInstant = now.plusSeconds(5 * 60);
-        Date expirationDate = Date.from(expirationInstant);
+        Instant scadenzaInstant = scadenza_token.atZone(ZoneId.systemDefault()).toInstant();
+        Date scadenza_token_date = Date.from(scadenzaInstant);
 
         String token = Jwts.builder()
                 .setId(UUID.randomUUID().toString())
                 .setIssuedAt(Date.from(now))
-                .setExpiration(expirationDate)
+                .setExpiration(scadenza_token_date)
                 .claim("token_type", tokenType)
-                .claim("ruolo", ruolo)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
         return token;
     }
 
-    public static String generateRefreshToken(String clientSecret, String tokenType, int ruolo) {
+    public static String generateRefreshToken(String clientSecret, String tokenType) {
         Key key = Keys.hmacShaKeyFor(clientSecret.getBytes());
+        String scadenza = config.getString("scadenza_refreshToken");
+        LocalDateTime scadenza_refresh_token = calcolaScadenza(scadenza);
+        Instant scadenzaInstant = scadenza_refresh_token.atZone(ZoneId.systemDefault()).toInstant();
+        Date scadenza_refresh_token_date = Date.from(scadenzaInstant);
         Instant now = Instant.now();
-        LocalDateTime expirationDateTime = LocalDateTime.ofInstant(now, ZoneId.systemDefault()).plusYears(1);
-        Instant expirationInstant = expirationDateTime.atZone(ZoneId.systemDefault()).toInstant();
-
-        Date expirationDate = Date.from(expirationInstant);
 
         String token = Jwts.builder()
                 .setId(UUID.randomUUID().toString())
                 .setIssuedAt(Date.from(now))
-                .setExpiration(expirationDate)
+                .setExpiration(scadenza_refresh_token_date)
                 .claim("token_type", tokenType)
-                .claim("ruolo", ruolo)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
@@ -383,10 +383,8 @@ public class AuthenticationService {
 
     public static String Auth(String clientId) {
         try {
-            JPAUtil jpaUtil = new JPAUtil();
-            Utente utente = jpaUtil.findUserByClientId(clientId);
-            String accessToken = generateToken(CLIENT_SECRET, "access_token", utente.getRuolo().getId());
-            String refreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token", utente.getRuolo().getId());
+            String accessToken = generateToken(CLIENT_SECRET, "access_token");
+            String refreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
             saveRefreshTokenToDatabase(clientId, refreshToken);
             refreshTokens.put(refreshToken, clientId);
             return accessToken;

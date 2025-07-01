@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
 public class StatisticheService {
 
     private final JPAUtil jpaUtil = new JPAUtil();
-    private ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StatisticheService.class.getName());
 
@@ -77,12 +77,11 @@ public class StatisticheService {
                 throw new IllegalArgumentException("Nessun questionario DIGICOMP 2.2 trovato.");
             }
 
-            createExcel(ultimoQuestionario);
+            return createExcel(ultimoQuestionario);
         } catch (IllegalArgumentException e) {
             logger.error("Errore durante l'estrazione dell'Excel per l'utente " + utenteId + ":\n" + e.getMessage());
             throw new Exception("Errore durante l'estrazione dell'Excel.", e);
         }
-        return null;
     }
 
     public void controllaDigicompPerUtenti(Logger logger) throws Exception {
@@ -210,7 +209,7 @@ public class StatisticheService {
         }
     }
 
-    public void createExcel(Questionario ultimoQuestionario) {
+    public byte[] createExcel(Questionario ultimoQuestionario) throws IOException {
         EntityManager em = jpaUtil.getEm();
         try {
             List<Long> utentiIds = ultimoQuestionario.getUtenti()
@@ -227,14 +226,14 @@ public class StatisticheService {
                 processaRisposte(questionario, categoriaSottocategoriaStats);
             }
 
-            generaExcel(categoriaSottocategoriaStats);
+            return generaExcel(categoriaSottocategoriaStats);
 
         } catch (Exception e) {
             LOGGER.error("Errore nella generazione del file Excel: " + estraiEccezione(e));
+            throw new IOException("Errore nella generazione del file Excel", e);
         } finally {
             if (em != null) {
                 em.close();
-
             }
         }
     }

@@ -429,7 +429,7 @@ public class QuestionarioServlet extends HttpServlet {
 
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Object> formData = objectMapper.readValue(jsonInput.toString(), Map.class);
-
+        
         String userIdParam = (String) formData.get("userId");
         Long userId = Utils.tryParseLong(userIdParam);
 

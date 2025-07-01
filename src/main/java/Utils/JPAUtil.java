@@ -340,7 +340,7 @@ public class JPAUtil {
                 em2.getTransaction().commit();
                 return true;
             }
-
+            
         } catch (Exception e) {
             if (em2.getTransaction().isActive()) {
                 em2.getTransaction().rollback();

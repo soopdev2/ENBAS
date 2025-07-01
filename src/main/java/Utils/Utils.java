@@ -13,16 +13,16 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang.StringEscapeUtils;
 import static org.apache.commons.lang.exception.ExceptionUtils.getStackTrace;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -338,4 +338,36 @@ public class Utils {
         return input.replaceAll("<[^>]*>", "").trim();
     }
 
+    public static LocalDateTime calcolaScadenza(String scadenza) {
+        scadenza = scadenza.trim().toLowerCase();
+
+        String valoreNumerico = scadenza.replaceAll("[^0-9]", "");
+        String tipo = scadenza.replaceAll("[0-9]", "");
+
+        int valore = Integer.parseInt(valoreNumerico);
+        LocalDateTime now = LocalDateTime.now();
+
+        switch (tipo) {
+            case "m" -> {
+                return now.plusMinutes(valore);
+            }
+            case "mo" -> {
+                return now.plusMonths(valore);
+            }
+            case "y" -> {
+                return now.plusYears(valore);
+            }
+            default ->
+                throw new IllegalArgumentException("Formato scadenza non valido: " + scadenza);
+        }
+    }
+
+    public static String sanitize(String input) {
+        if (input == null) {
+            return null;
+        }
+        input = input.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+        input = input.replaceAll("[\r\n]", "");
+        return StringEscapeUtils.escapeHtml(input);
+    }
 }

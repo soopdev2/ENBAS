@@ -886,17 +886,17 @@
             class PercentageProgressBar extends SurveyUI.ReactSurveyElement {
             render() {
             return (
-            <div className="sv-progressbar-percentage">
-                <div className="sv-progressbar-percentage__title">
-                    <span>{this.props.model.progressTitle}</span>
-            </div>
-            <div className="sv-progressbar-percentage__indicator">
-            <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
-            </div>
-            <div className="sv-progressbar-percentage__value">
-            <span>{this.props.model.progressValue + "%"}</span>
+                    <div className="sv-progressbar-percentage">
+        <div className="sv-progressbar-percentage__title">
+        <span>{this.props.model.progressTitle}</span>
                 </div>
+                <div className="sv-progressbar-percentage__indicator">
+                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
                 </div>
+                <div className="sv-progressbar-percentage__value">
+                    <span>{this.props.model.progressValue + "%"}</span>
+        </div>
+            </div>
                     );
             }
             }
@@ -1247,16 +1247,16 @@
             render() {
             return (
                     <div className="sv-progressbar-percentage">
-                                                            <div className="sv-progressbar-percentage__title">
-                                                        <span>{this.props.model.progressTitle}</span>
-                                                    </div>
-                                                <div className="sv-progressbar-percentage__indicator">
-                    <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
+                                    <div className="sv-progressbar-percentage__title">
+            <span>{this.props.model.progressTitle}</span>
                 </div>
-                <div className="sv-progressbar-percentage__value">
-                    <span>{this.props.model.progressValue + "%"}</span>
-        </div>
-        </div>
+                <div className="sv-progressbar-percentage__indicator">
+                                        <div className="sv-progressbar-percentage__value-bar" style={{width: this.props.model.progressValue + "%"}}></div>
+                                                </div>
+                                                <div className="sv-progressbar-percentage__value">
+                                                    <span>{this.props.model.progressValue + "%"}</span>
+                </div>
+            </div>
                     );
             }
             }
