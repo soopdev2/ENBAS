@@ -39,7 +39,7 @@ import org.mindrot.jbcrypt.BCrypt;
 @Path("/oauth2")
 public class AuthenticationService {
 
-    public static final String CLIENT_SECRET = "d3J0BcMNHcAV+Weog62o3S8vV3vUprUh73PTRwUYXvk=";
+    public static final String CLIENT_SECRET = config.getString("CLIENT_SECRET");
     private static final Map<String, String> refreshTokens = new ConcurrentHashMap<>();
 
     @POST
@@ -137,7 +137,6 @@ public class AuthenticationService {
 //                    .build();
 //        }
 //    }
-
     private boolean isValidRefreshToken(String clientId, String clientSecret, String refreshToken) {
         EntityManagerFactory entityManagerFactory = null;
         EntityManager entityManager = null;

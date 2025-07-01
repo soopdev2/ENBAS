@@ -15,6 +15,7 @@ import Entity.Utente;
 import Enum.Tipo_inserimento;
 import Services.Filter.Secured;
 import Utils.Utils;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -24,6 +25,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +70,29 @@ public class DomandaController {
                 if (domanda.getDescrizione() != null) {
                     json.addProperty("descrizione", domanda.getDescrizione());
                 }
-                if (domanda.getOpzioni() != null && domanda.getTipo_inserimento().equals(Tipo_inserimento.MANUALE)) {
-                    json.addProperty("opzioni", domanda.getOpzioni());
+                if (domanda.getOpzioni() == null && domanda.getTipo_inserimento().equals(Tipo_inserimento.AUTOMATICO)) {
+                    String risposteJson = domanda.getRisposte();
+
+                    JSONObject jsonRisposte = new JSONObject(risposteJson);
+
+                    JSONArray risposteArray = jsonRisposte.getJSONArray("risposte");
+
+                    JsonArray risposteEstratte = new JsonArray();
+
+                    for (int i = 0; i < risposteArray.length(); i++) {
+                        JSONObject risposta = risposteArray.getJSONObject(i);
+
+                        JsonObject rispostaEstratta = new JsonObject();
+                        rispostaEstratta.addProperty("id", risposta.getInt("id"));
+                        rispostaEstratta.addProperty("corretta", risposta.getBoolean("corretta"));
+                        rispostaEstratta.addProperty("testo", risposta.getString("testo"));
+
+                        risposteEstratte.add(rispostaEstratta);
+                    }
+
+                    json.add("opzioni", risposteEstratte);
                 } else {
-                    json.addProperty("opzioni", domanda.getRisposte());
+                    json.addProperty("opzioni", domanda.getOpzioni());
                 }
                 if (domanda.getCategoria() != null && domanda.getCategoria().getNome() != null) {
                     json.addProperty("area", domanda.getCategoria().getNome());
