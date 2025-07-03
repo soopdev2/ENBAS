@@ -130,7 +130,7 @@ public class DomandaController {
             @FormParam("titolo") String titolo,
             @FormParam("nome_domanda") String nome_domanda,
             @FormParam("risposta_text") List<String> risposta_text,
-            @FormParam("si_no_select") List<String> si_no_select
+            @FormParam("corretta") List<String> si_no_select
     ) {
         JPAUtil jpaUtil = new JPAUtil();
         Utente utente = jpaUtil.findUserByUserId(userId.toString());
@@ -146,7 +146,7 @@ public class DomandaController {
                     si_no_select.toArray(new String[0]),
                     LOGGER);
 
-            return Response.ok().entity("{\"status\":\"success\"}").build();
+            return Response.ok().entity("{\"status\":\"domanda creata con successo.\"}").build();
         } else {
             return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
         }
@@ -166,7 +166,7 @@ public class DomandaController {
             @FormParam("titolo") String titolo,
             @FormParam("nome_domanda") String nome_domanda,
             @FormParam("risposta_text") List<String> risposta_text,
-            @FormParam("si_no_select") List<String> si_no_select,
+            @FormParam("corretta") List<String> si_no_select,
             @FormParam("id_risposta") List<String> idRisposte
     ) {
         JPAUtil jpaUtil = new JPAUtil();
@@ -194,7 +194,7 @@ public class DomandaController {
                         LOGGER
                 );
 
-                return Response.ok("{\"status\":\"success\"}").build();
+                return Response.ok("{\"status\":\"domanda aggiornata con successo.\"}").build();
 
             } catch (Exception e) {
                 LOGGER.error("Errore durante l'aggiornamento della domanda", e);
