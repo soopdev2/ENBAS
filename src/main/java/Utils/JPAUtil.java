@@ -13,11 +13,13 @@ import Entity.Domanda;
 import Entity.ModelloPredefinito;
 import Entity.Pagina;
 import Entity.Questionario;
+import Entity.Ruolo;
 import Entity.SottoCategoria;
 import Entity.Utente;
 import Enum.Assegnabile_enum;
 import Enum.Si_no;
 import Enum.Stato_questionario;
+import Enum.Stato_utente;
 import Enum.Tipo_domanda;
 import Enum.Tipo_inserimento;
 import Enum.Visibilità_domanda;
@@ -42,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.Iterator;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mindrot.jbcrypt.BCrypt;
@@ -150,6 +151,23 @@ public class JPAUtil {
             }
         } catch (Exception e) {
             LOGGER.error("Non è stato possibile effettuare la ricerca dell'utente con id " + userId + "\n" + Utils.estraiEccezione(e));
+        } finally {
+            if (em2 != null) {
+                em2.close();
+            }
+        }
+        return null;
+    }
+
+    public Ruolo findRuoloById(int ruolo_int) {
+        EntityManager em2 = this.getEm();
+        try {
+            Ruolo ruolo = em2.find(Ruolo.class, (ruolo_int));
+            if (ruolo != null) {
+                return ruolo;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Non è stato possibile effettuare la ricerca del ruolo con id " + ruolo_int + "\n" + Utils.estraiEccezione(e));
         } finally {
             if (em2 != null) {
                 em2.close();
@@ -336,16 +354,45 @@ public class JPAUtil {
             em2.getTransaction().begin();
 
             if (domanda != null) {
-                em2.remove(domanda);
+                domanda.setVisibilità_domanda(Visibilità_domanda.NON_VISIBILE);
+                em2.merge(domanda);
                 em2.getTransaction().commit();
                 return true;
             }
-            
+
         } catch (Exception e) {
             if (em2.getTransaction().isActive()) {
                 em2.getTransaction().rollback();
             }
             LOGGER.error("Non è stato possibile effettuare l'eliminazione della domanda con id " + domandaId + "\n" + Utils.estraiEccezione(e));
+        } finally {
+            if (em2 != null) {
+                em2.close();
+            }
+        }
+        return false;
+    }
+
+    public boolean deleteUtenteById(Long utente_id) {
+        EntityManager em2 = this.getEm();
+
+        try {
+
+            Utente utente = em2.find(Utente.class, utente_id);
+            em2.getTransaction().begin();
+
+            if (utente != null) {
+                utente.setStato_utente(Stato_utente.NON_ATTIVO);
+                em2.merge(utente);
+                em2.getTransaction().commit();
+                return true;
+            }
+
+        } catch (Exception e) {
+            if (em2.getTransaction().isActive()) {
+                em2.getTransaction().rollback();
+            }
+            LOGGER.error("Non è stato possibile effettuare l'eliminazione dell'utenza con id " + utente_id + "\n" + Utils.estraiEccezione(e));
         } finally {
             if (em2 != null) {
                 em2.close();
@@ -1474,6 +1521,131 @@ public class JPAUtil {
 
         } catch (Exception e) {
             logger.error("Non è stato possibile creare la nuova domanda" + "\n" + Utils.estraiEccezione(e));
+            if (em != null && em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
+    public void creaUtente(String nome, String cognome, String email, String username, String password, int età, String indirizzo, int ruolo_int, Logger logger) {
+        JPAUtil jPAUtil = new JPAUtil();
+        EntityManager em = jPAUtil.getEm();
+
+        try {
+            em.getTransaction().begin();
+            Utente utente = new Utente();
+
+            if (nome != null) {
+                utente.setNome(nome);
+            }
+            if (cognome != null) {
+                utente.setCognome(cognome);
+            }
+            if (email != null) {
+                utente.setEmail(email);
+            }
+
+            if (username != null) {
+                utente.setUsername(username);
+            }
+            if (età != 0) {
+                utente.setEtà(età);
+            }
+
+            if (indirizzo != null) {
+                utente.setIndirizzo(indirizzo);
+            }
+
+            if (ruolo_int != 0) {
+                Ruolo ruolo = findRuoloById(ruolo_int);
+                utente.setRuolo(ruolo);
+            }
+            if (password != null) {
+                utente.setPassword(password);
+            }
+            utente.setStato_utente(Stato_utente.ATTIVO);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+
+            em.persist(utente);
+            em.getTransaction().commit();
+
+            logger.info("Utenza creata con successo! " + sdf.format(new Date()));
+
+        } catch (Exception e) {
+            logger.error("Non è stato possibile creare una nuova utenza" + "\n" + Utils.estraiEccezione(e));
+            if (em != null && em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
+    public void modificaUtente(Long userId, String nome, String cognome, String email, String username, String password, String stato_utente, int età, String indirizzo, int ruolo_int, Logger logger) {
+        JPAUtil jPAUtil = new JPAUtil();
+        EntityManager em = jPAUtil.getEm();
+
+        try {
+            Utente vecchioUtente = em.find(Utente.class, userId);
+            if (vecchioUtente == null) {
+                logger.error("Utenza con id " + userId + " non trovata.");
+                return;
+            }
+
+            em.getTransaction().begin();
+
+            if (nome != null) {
+                vecchioUtente.setNome(nome);
+            }
+            if (cognome != null) {
+                vecchioUtente.setCognome(cognome);
+            }
+
+            if (email != null) {
+                vecchioUtente.setEmail(email);
+            }
+
+            if (username != null) {
+                vecchioUtente.setUsername(username);
+            }
+            if (età != 0) {
+                vecchioUtente.setEtà(età);
+            }
+
+            if (indirizzo != null) {
+                vecchioUtente.setIndirizzo(indirizzo);
+            }
+
+            if (ruolo_int != 0) {
+                Ruolo ruolo = findRuoloById(ruolo_int);
+                vecchioUtente.setRuolo(ruolo);
+            }
+
+            if (stato_utente != null) {
+                if (stato_utente.equalsIgnoreCase(Stato_utente.ATTIVO.toString())) {
+                    vecchioUtente.setStato_utente(Stato_utente.ATTIVO);
+                } else {
+                    vecchioUtente.setStato_utente(Stato_utente.NON_ATTIVO);
+                }
+            }
+
+            if (password != null) {
+                vecchioUtente.setPassword(password);
+            }
+
+            em.merge(vecchioUtente);
+            em.getTransaction().commit();
+
+            logger.info("Utenza aggiornata con successo! id: " + userId);
+        } catch (Exception e) {
+            logger.error("Errore nell'aggiornamento dell'utenza con id " + userId + "\n" + Utils.estraiEccezione(e));
             if (em != null && em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }

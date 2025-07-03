@@ -21,9 +21,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import jakarta.persistence.TypedQuery;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
+import java.io.InputStream;
 import java.security.Key;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -31,16 +30,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.mindrot.jbcrypt.BCrypt;
+import java.util.MissingResourceException;
+import java.util.Properties;
 
 @Path("/oauth2")
 public class AuthenticationService {
 
     public static final String CLIENT_SECRET = config.getString("CLIENT_SECRET");
-    private static final Map<String, String> refreshTokens = new ConcurrentHashMap<>();
 
     @POST
     @Path("/token")
@@ -58,15 +54,14 @@ public class AuthenticationService {
         if (isValidCredentials(clientId, clientSecret)) {
             try {
                 String accessToken = generateToken(CLIENT_SECRET, "access_token");
-                String refreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
-                saveRefreshTokenToDatabase(clientId, refreshToken);
-                refreshTokens.put(refreshToken, clientId);
+                //String refreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
                 Instant expirationInstant = getExpirationInstantFromToken(accessToken, clientSecret);
-                Instant expirationInstant2 = getExpirationInstantFromToken(refreshToken, clientSecret);
+                //Instant expirationInstant2 = getExpirationInstantFromToken(refreshToken, clientSecret);
 
-                String jsonResponse = "{\"access_token\":\"" + accessToken + "\", \"expiration_date\":\"" + formatInstant(expirationInstant) + "\", \"refresh_token\":\"" + refreshToken + "\", \"refresh_token_expiration_date\":\"" + formatInstant(expirationInstant2) + "\"}";
+                //String jsonResponse = "{\"access_token\":\"" + accessToken + "\", \"expiration_date\":\"" + formatInstant(expirationInstant) + "\", \"refresh_token\":\"" + refreshToken + "\", \"refresh_token_expiration_date\":\"" + formatInstant(expirationInstant2) + "\"}";
+                String jsonResponseSenzaRefresh = "{\"access_token\":\"" + accessToken + "\", \"expiration_date\":\"" + formatInstant(expirationInstant) + "\"}";
 
-                return Response.ok().entity(jsonResponse).type(MediaType.APPLICATION_JSON).build();
+                return Response.ok().entity(jsonResponseSenzaRefresh).type(MediaType.APPLICATION_JSON).build();
             } catch (Exception e) {
                 e.printStackTrace();
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error during token generation").build();
@@ -76,39 +71,33 @@ public class AuthenticationService {
         }
     }
 
-    @POST
-    @Path("/refreshToken")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response refreshToken(
-            @FormParam("client_id") String clientId,
-            @FormParam("client_secret") String clientSecret,
-            @FormParam("refresh_token") String refreshToken) {
-
-        if (isValidRefreshToken(clientId, clientSecret, refreshToken)) {
-            try {
-                JPAUtil jpaUtil = new JPAUtil();
-                Utente utente = jpaUtil.findUserByClientId(clientId);
-                String newAccessToken = generateToken(CLIENT_SECRET, "access_token");
-                String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
-
-                saveRefreshTokenToDatabase(clientId, newRefreshToken);
-
-                Instant expirationInstantAccessToken = getExpirationInstantFromToken(newAccessToken, clientSecret);
-                Instant expirationInstantRefreshToken = getExpirationInstantFromToken(newRefreshToken, clientSecret);
-
-                String jsonResponse = "{\"access_token\":\"" + newAccessToken + "\", \"expiration_date\":\"" + formatInstant(expirationInstantAccessToken) + "\", \"refresh_token\":\"" + newRefreshToken + "\", \"refresh_token_expiration_date\":\"" + formatInstant(expirationInstantRefreshToken) + "\"}";
-
-                return Response.ok().entity(jsonResponse).type(MediaType.APPLICATION_JSON).build();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error during token generation").build();
-            }
-        } else {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-    }
-
+//    @POST
+//    @Path("/refreshToken")
+//    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response refreshToken(
+//            @FormParam("client_id") String clientId,
+//            @FormParam("client_secret") String clientSecret,
+//            @FormParam("refresh_token") String refreshToken) {
+//
+//        if (isValidRefreshToken(clientId, clientSecret, refreshToken)) {
+//            try {
+//                String newAccessToken = generateToken(CLIENT_SECRET, "access_token");
+//                String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
+//                Instant expirationInstantAccessToken = getExpirationInstantFromToken(newAccessToken, clientSecret);
+//                Instant expirationInstantRefreshToken = getExpirationInstantFromToken(newRefreshToken, clientSecret);
+//
+//                String jsonResponse = "{\"access_token\":\"" + newAccessToken + "\", \"expiration_date\":\"" + formatInstant(expirationInstantAccessToken) + "\", \"refresh_token\":\"" + newRefreshToken + "\", \"refresh_token_expiration_date\":\"" + formatInstant(expirationInstantRefreshToken) + "\"}";
+//
+//                return Response.ok().entity(jsonResponse).type(MediaType.APPLICATION_JSON).build();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error during token generation").build();
+//            }
+//        } else {
+//            return Response.status(Response.Status.UNAUTHORIZED).build();
+//        }
+//    }
 //    @GET
 //    @Path("/auth")
 //    @Produces(MediaType.APPLICATION_JSON)
@@ -137,116 +126,73 @@ public class AuthenticationService {
 //                    .build();
 //        }
 //    }
-    private boolean isValidRefreshToken(String clientId, String clientSecret, String refreshToken) {
-        EntityManagerFactory entityManagerFactory = null;
-        EntityManager entityManager = null;
+//    private boolean isValidRefreshToken(String clientId, String clientSecret, String refreshToken) {
+//        EntityManagerFactory entityManagerFactory = null;
+//        EntityManager entityManager = null;
+//
+//        try {
+//            entityManagerFactory = Persistence.createEntityManagerFactory("gestionale_questionario");
+//            entityManager = entityManagerFactory.createEntityManager();
+//
+//            TypedQuery<Utente> query = entityManager.createQuery(
+//                    "SELECT u FROM Utente u WHERE u.username = :username", Utente.class
+//            )
+//                    .setParameter("username", clientId);
+//
+//            Utente utente = query.getSingleResult();
+//
+//            if (utente != null) {
+//                Instant expirationInstant = getExpirationInstantFromToken(refreshToken, clientSecret);
+//                if (expirationInstant != null && expirationInstant.isBefore(Instant.now())) {
+//                    return false;
+//                }
+//
+//                if (utente.getRefreshToken() != null && utente.getRefreshToken().equals(refreshToken)) {
+//                    String newAccessToken = generateToken(CLIENT_SECRET, "access_token");
+//                    String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
+//                    utente.setRefreshToken(newRefreshToken);
+//
+//                    entityManager.getTransaction().begin();
+//                    entityManager.merge(utente);
+//                    entityManager.getTransaction().commit();
+//
+//                    return true;
+//                } else {
+//                    return false;
+//                }
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (entityManager != null) {
+//                entityManager.close();
+//            }
+//            if (entityManagerFactory != null) {
+//                entityManagerFactory.close();
+//            }
+//        }
+//
+//        return false;
+//    }
+    public static boolean isValidCredentials(String clientId, String clientSecret) {
+        int i = 1;
 
-        try {
-            entityManagerFactory = Persistence.createEntityManagerFactory("gestionale_questionario");
-            entityManager = entityManagerFactory.createEntityManager();
+        while (true) {
+            try {
+                String storedClientId = config.getString("client_id_" + i);
+                String storedClientSecret = config.getString("client_secret_" + i);
 
-            TypedQuery<Utente> query = entityManager.createQuery(
-                    "SELECT u FROM Utente u WHERE u.username = :username", Utente.class
-            )
-                    .setParameter("username", clientId);
-
-            Utente utente = query.getSingleResult();
-
-            if (utente != null) {
-                Instant expirationInstant = getExpirationInstantFromToken(refreshToken, clientSecret);
-                if (expirationInstant != null && expirationInstant.isBefore(Instant.now())) {
-                    return false;
-                }
-
-                if (utente.getRefreshToken() != null && utente.getRefreshToken().equals(refreshToken)) {
-                    String newAccessToken = generateToken(CLIENT_SECRET, "access_token");
-                    String newRefreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
-                    utente.setRefreshToken(newRefreshToken);
-
-                    entityManager.getTransaction().begin();
-                    entityManager.merge(utente);
-                    entityManager.getTransaction().commit();
-
+                if (storedClientId.equalsIgnoreCase(clientId) && storedClientSecret.equals(clientSecret)) {
                     return true;
-                } else {
-                    return false;
                 }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (entityManager != null) {
-                entityManager.close();
-            }
-            if (entityManagerFactory != null) {
-                entityManagerFactory.close();
+
+                i++;
+            } catch (MissingResourceException e) {
+                break;
             }
         }
 
         return false;
-    }
-
-    public static boolean isValidCredentials(String clientId, String clientSecret) {
-        EntityManagerFactory entityManagerFactory = null;
-        EntityManager entityManager = null;
-
-        try {
-            entityManagerFactory = Persistence.createEntityManagerFactory("gestionale_questionario");
-            entityManager = entityManagerFactory.createEntityManager();
-
-            TypedQuery<Utente> query = entityManager.createQuery(
-                    "SELECT u FROM Utente u WHERE u.username = :username", Utente.class
-            ).setParameter("username", clientId);
-
-            Utente utente = query.getSingleResult();
-
-            if (utente != null) {
-                String hashedPasswordFromDatabase = utente.getPassword();
-                return BCrypt.checkpw(clientSecret, hashedPasswordFromDatabase);
-            }
-
-            return false;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-
-        } finally {
-            if (entityManager != null) {
-                entityManager.close();
-            }
-            if (entityManagerFactory != null) {
-                entityManagerFactory.close();
-            }
-        }
-    }
-
-    private String getRefreshTokenFromDatabase(String clientId) {
-        EntityManagerFactory entityManagerFactory = null;
-        EntityManager entityManager = null;
-
-        try {
-            entityManagerFactory = Persistence.createEntityManagerFactory("gestionale_questionario");
-            entityManager = entityManagerFactory.createEntityManager();
-
-            TypedQuery<String> query = entityManager.createQuery(
-                    "SELECT u.refreshToken FROM Utente u WHERE u.username = :username", String.class
-            )
-                    .setParameter("username", clientId);
-
-            return query.getSingleResult();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (entityManager != null) {
-                entityManager.close();
-            }
-            if (entityManagerFactory != null) {
-                entityManagerFactory.close();
-            }
-        }
-
-        return null;
     }
 
     public static String generateToken(String clientSecret, String tokenType) {
@@ -385,7 +331,6 @@ public class AuthenticationService {
             String accessToken = generateToken(CLIENT_SECRET, "access_token");
             String refreshToken = generateRefreshToken(CLIENT_SECRET, "refresh_token");
             saveRefreshTokenToDatabase(clientId, refreshToken);
-            refreshTokens.put(refreshToken, clientId);
             return accessToken;
         } catch (Exception e) {
             e.printStackTrace();

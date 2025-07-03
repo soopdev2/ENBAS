@@ -130,7 +130,8 @@ public class DomandaController {
             @FormParam("titolo") String titolo,
             @FormParam("nome_domanda") String nome_domanda,
             @FormParam("risposta_text") List<String> risposta_text,
-            @FormParam("corretta") List<String> si_no_select
+            @FormParam("corretta") List<String> si_no_select,
+            @HeaderParam("Authorization") String authorizationHeader
     ) {
         JPAUtil jpaUtil = new JPAUtil();
         Utente utente = jpaUtil.findUserByUserId(userId.toString());
@@ -167,7 +168,8 @@ public class DomandaController {
             @FormParam("nome_domanda") String nome_domanda,
             @FormParam("risposta_text") List<String> risposta_text,
             @FormParam("corretta") List<String> si_no_select,
-            @FormParam("id_risposta") List<String> idRisposte
+            @FormParam("id_risposta") List<String> idRisposte,
+            @HeaderParam("Authorization") String authorizationHeader
     ) {
         JPAUtil jpaUtil = new JPAUtil();
         Utente utente = jpaUtil.findUserByUserId(userId.toString());
@@ -229,7 +231,7 @@ public class DomandaController {
 
                 boolean deleted = jpaUtil.deleteDomandaById(domanda_id);
                 if (deleted) {
-                    return Response.ok("{\"message\":\"Domanda eliminata con successo\"}").build();
+                    return Response.ok("{\"status\":\"Domanda eliminata con successo\"}").build();
                 } else {
                     return Response.serverError()
                             .entity("{\"error\":\"Errore durante l'eliminazione della domanda\"}")

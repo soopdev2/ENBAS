@@ -4,16 +4,18 @@
  */
 package Entity;
 
+import Enum.Stato_utente;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
-import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -34,6 +36,8 @@ public class Utente implements Serializable {
 
     private String cognome;
 
+    private String email;
+
     private int età;
 
     private String indirizzo;
@@ -42,6 +46,9 @@ public class Utente implements Serializable {
 
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    private Stato_utente stato_utente;
+
     @ManyToOne
     private Ruolo ruolo;
 
@@ -49,7 +56,6 @@ public class Utente implements Serializable {
     private List<Questionario> questionari;
 
     private String refreshToken;
-
 
     public String getRefreshToken() {
         return refreshToken;
@@ -81,6 +87,14 @@ public class Utente implements Serializable {
 
     public void setCognome(String cognome) {
         this.cognome = cognome;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public int getEtà() {
@@ -129,6 +143,14 @@ public class Utente implements Serializable {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Stato_utente getStato_utente() {
+        return stato_utente;
+    }
+
+    public void setStato_utente(Stato_utente stato_utente) {
+        this.stato_utente = stato_utente;
     }
 
     @Override

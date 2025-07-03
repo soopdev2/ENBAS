@@ -50,7 +50,7 @@ public class StatisticheController {
                 } catch (Exception e) {
                     LOGGER.error("Errore nell'estrazione dell'Excel per l'utente " + selectedUserId, e);
                     return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity("Errore durante l'estrazione dell'Excel.")
+                            .entity("{\"error\": \"\"Errore durante l'estrazione dell'Excel.")
                             .build();
                 }
             } else {
@@ -74,12 +74,12 @@ public class StatisticheController {
                 statisticheService.controllaDigicompPerUtenti(LOGGER);
 
                 return Response.status(Response.Status.OK)
-                        .entity("{\"message\": \"Controllo completato con successo\"}")
+                        .entity("{\"status\": \"Controllo completato con successo\"}")
                         .build();
             } catch (Exception e) {
                 LOGGER.error("Errore durante il controllo dei questionari Digicomp.", e);
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity("{\"message\": \"Errore durante il controllo dei questionari Digicomp.\"}")
+                        .entity("{\"error\": \"Errore durante il controllo dei questionari Digicomp.\"}")
                         .build();
             }
         } else {
