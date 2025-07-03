@@ -145,7 +145,7 @@
             <version>6.1.0</version>
         </dependency>
         
-        <dependency>
+<!--        <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
             <version>1.0.1</version>
@@ -191,7 +191,7 @@
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-embedding-store-filter-parser-sql</artifactId>
             <version>1.0.1-beta6</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -221,11 +221,11 @@
             <artifactId>jakarta.xml.ws-api</artifactId>
             <version>4.0.2</version>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>com.sinch</groupId>
             <artifactId>sdk-sms</artifactId>
             <version>2.2.2</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
@@ -309,11 +309,11 @@
             <artifactId>antlr-runtime</artifactId>
             <version>3.5.3</version>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>com.mailjet</groupId>
             <artifactId>mailjet-client</artifactId>
             <version>5.2.5</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
