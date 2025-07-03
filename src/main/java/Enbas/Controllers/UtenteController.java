@@ -56,6 +56,10 @@ public class UtenteController {
                     json.addProperty("cognome", utenteSelezionato.getCognome());
                 }
 
+                if (utenteSelezionato.getEmail() != null) {
+                    json.addProperty("email", utenteSelezionato.getEmail());
+                }
+
                 if (utenteSelezionato.getUsername() != null) {
                     json.addProperty("username", utenteSelezionato.getUsername());
                 }
