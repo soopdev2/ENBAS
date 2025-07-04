@@ -38,23 +38,19 @@ public class StatisticheController {
     public Response estraiExcelPerUtente(@FormParam("userId") Long userId, @FormParam("selectedUserId") Long selectedUserId, @HeaderParam("Authorization") String authorizationHeader) {
         JPAUtil jpaUtil = new JPAUtil();
         Utente utente = jpaUtil.findUserByUserId(userId.toString());
-        if (utente.getRuolo().getId() == 1 || utente.getRuolo().getId() == 2) {
-            if (utente.getRuolo().getId() == 2 && utente.getId().equals(selectedUserId)) {
-                try {
-                    byte[] excelData = statisticheService.estraiExcelPerUtente(selectedUserId, LOGGER);
-                    Utente selectedUser = jpaUtil.findUserByUserId(selectedUserId.toString());
+        if (utente.getRuolo().getId() == 2 && utente.getId().equals(selectedUserId) || utente.getRuolo().getId() == 1) {
+            try {
+                byte[] excelData = statisticheService.estraiExcelPerUtente(selectedUserId, LOGGER);
+                Utente selectedUser = jpaUtil.findUserByUserId(selectedUserId.toString());
 
-                    return Response.ok(excelData)
-                            .header("Content-Disposition", "attachment; filename=\"statistiche_utente_" + Utils.sanitize(selectedUser.getNome().toUpperCase()) + "_" + Utils.sanitize(selectedUser.getCognome().toUpperCase()) + ".xlsx\"")
-                            .build();
-                } catch (Exception e) {
-                    LOGGER.error("Errore nell'estrazione dell'Excel per l'utente " + selectedUserId, e);
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity("{\"error\": \"\"Errore durante l'estrazione dell'Excel.")
-                            .build();
-                }
-            } else {
-                return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Non puoi visualizzare le statistiche degli altri utenti.\"}").build();
+                return Response.ok(excelData)
+                        .header("Content-Disposition", "attachment; filename=\"statistiche_utente_" + Utils.sanitize(selectedUser.getNome().toUpperCase()) + "_" + Utils.sanitize(selectedUser.getCognome().toUpperCase()) + ".xlsx\"")
+                        .build();
+            } catch (Exception e) {
+                LOGGER.error("Errore nell'estrazione dell'Excel per l'utente " + selectedUserId, e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("{\"error\": \"\"Errore durante l'estrazione dell'Excel.")
+                        .build();
             }
         } else {
             return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();

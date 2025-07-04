@@ -240,33 +240,27 @@ public class QuestionarioController {
     @Path("/visualizzaPdf")
     @Produces("application/pdf")
     @Secured
-    public Response visualizzaQuestionarioAdmin(@FormParam("userId") Long userId, 
+    public Response visualizzaQuestionarioAdmin(@FormParam("userId") Long userId,
             @FormParam("selectedUserId") Long selectedUserId,
             @FormParam("id_questionario") Long id_questionario,
             @HeaderParam("Authorization") String authorizationHeader
     ) {
         JPAUtil jpaUtil = new JPAUtil();
         Utente utente_ = jpaUtil.findUserByUserId(userId.toString());
-        if (utente_.getRuolo().getId() == 1 || utente_.getRuolo().getId() == 2) {
-            if (utente_.getRuolo().getId() == 2 && utente_.getId().equals(selectedUserId)) {
-                try {
-                    byte[] pdfBytes = questionarioService.generaPdfQuestionario(selectedUserId, id_questionario, LOGGER);
-                    Utente selectedUser = jpaUtil.findUserByUserId(selectedUserId.toString());
-                    return Response.ok(pdfBytes, MediaType.APPLICATION_OCTET_STREAM)
-                            .header("Content-Disposition", "attachment; filename=\"questionario_" + Utils.sanitize(selectedUser.getNome().toUpperCase()) + "_" + Utils.sanitize(selectedUser.getCognome().toUpperCase()) + ".pdf\"")
-                            .build();
-                } catch (IllegalArgumentException e) {
-                    LOGGER.error("Questionario non trovato: " + e.getMessage());
-                    return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-                } catch (Exception e) {
-                    LOGGER.error("Errore durante la generazione del PDF:: " + e.getMessage());
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity("Errore durante la generazione del PDF: " + e.getMessage()).build();
-                }
-            } else {
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"error\": \"Non puoi visualizzare il questionario di un altro utente.\"}")
+        if (utente_.getRuolo().getId() == 2 && utente_.getId().equals(selectedUserId) || utente_.getRuolo().getId() == 1) {
+            try {
+                byte[] pdfBytes = questionarioService.generaPdfQuestionario(selectedUserId, id_questionario, LOGGER);
+                Utente selectedUser = jpaUtil.findUserByUserId(selectedUserId.toString());
+                return Response.ok(pdfBytes, MediaType.APPLICATION_OCTET_STREAM)
+                        .header("Content-Disposition", "attachment; filename=\"questionario_" + Utils.sanitize(selectedUser.getNome().toUpperCase()) + "_" + Utils.sanitize(selectedUser.getCognome().toUpperCase()) + ".pdf\"")
                         .build();
+            } catch (IllegalArgumentException e) {
+                LOGGER.error("Questionario non trovato: " + e.getMessage());
+                return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+            } catch (Exception e) {
+                LOGGER.error("Errore durante la generazione del PDF:: " + e.getMessage());
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("Errore durante la generazione del PDF: " + e.getMessage()).build();
             }
         } else {
             return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\": \"Ruolo non autorizzato.\"}").build();
