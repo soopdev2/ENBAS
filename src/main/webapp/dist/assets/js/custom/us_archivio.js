@@ -71,4 +71,14 @@ $(document).ready(function () {
     $('#tipo_questionario').on('change', function () {
         table.ajax.reload();
     });
+
+    $('#tipo_questionario').select2({
+        theme: 'bootstrap-5',
+        width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style'
+    });
+
+    $('#stato_questionario_select').select2({
+        theme: 'bootstrap-5',
+        width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style'
+    });
 });

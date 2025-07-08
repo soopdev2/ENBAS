@@ -42,6 +42,8 @@
         <link rel="stylesheet" href="dist/assets/css/custom/global.css"/>
         <link href='https://fonts.googleapis.com/css?family=Titillium Web' rel='stylesheet'>
         <link rel="stylesheet" href="dist/assets/css/external/dataTables.bootstrap5.css"/>
+        <link rel="stylesheet" href="dist/assets/css/external/select2.min.css" />
+        <link rel="stylesheet" href="dist/assets/css/external/select2-bootstrap-5-theme.min.css" />
         <link rel="apple-touch-icon" sizes="180x180" href="dist/img/favicon1/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="dist/img/favicon1/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="dist/img/favicon1/favicon-16x16.png">
@@ -366,6 +368,8 @@
         <script src="dist/assets/js/external/jquery-3.7.1.js"></script>
         <script src="dist/assets/js/external/dataTables.js"></script>
         <script src="dist/assets/js/external/dataTables.bootstrap5.js"></script>
+        <script src="dist/assets/js/external/select2.min.js"></script>
+
 
         <script src="dist/assets/js/custom/us_archivio.js"></script>
         <script src="dist/assets/js/custom/logout.js"></script>
