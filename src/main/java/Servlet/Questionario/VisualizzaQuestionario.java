@@ -6,6 +6,7 @@ package Servlet.Questionario;
 
 import Entity.Categoria;
 import Entity.Digicomp;
+import Entity.InfoTrack;
 import Entity.ModelloPredefinito;
 import Entity.Questionario;
 import Entity.Utente;
@@ -28,6 +29,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +38,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -45,6 +49,8 @@ import org.slf4j.LoggerFactory;
  * @author Salvatore
  */
 public class VisualizzaQuestionario extends HttpServlet {
+
+    public static JPAUtil jPAUtil;
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -59,11 +65,13 @@ public class VisualizzaQuestionario extends HttpServlet {
             throws ServletException, IOException {
         String utenteQuestionarioIdParam = request.getParameter("questionario_id");
         final Logger LOGGER = LoggerFactory.getLogger(VisualizzaQuestionario.class.getName());
+        HttpSession session = request.getSession();
+        String userId = Utils.checkAttribute(session, "userId");
 
         if (utenteQuestionarioIdParam != null && !utenteQuestionarioIdParam.isEmpty()) {
             try {
                 Long utenteQuestionarioId = Utils.tryParseLong((utenteQuestionarioIdParam));
-                gestisciVisualizzazioneQuestionario(utenteQuestionarioId, response, LOGGER);
+                gestisciVisualizzazioneQuestionario(utenteQuestionarioId, response, LOGGER, userId);
             } catch (NumberFormatException e) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID del questionario non valido.");
             }
@@ -73,15 +81,14 @@ public class VisualizzaQuestionario extends HttpServlet {
     }
 
     private void gestisciVisualizzazioneQuestionario(Long utenteQuestionarioId,
-            HttpServletResponse response, Logger logger) {
-        generaPdfQuestionario(utenteQuestionarioId, response, logger);
+            HttpServletResponse response, Logger logger, String userId) {
+        generaPdfQuestionario(utenteQuestionarioId, response, logger, userId);
     }
 
-    private static void generaPdfQuestionario(Long utenteQuestionarioId, HttpServletResponse response, Logger logger) {
+    private static void generaPdfQuestionario(Long utenteQuestionarioId, HttpServletResponse response, Logger logger, String userId_sessione) {
         try {
-            JPAUtil jpaUtil = new JPAUtil();
-            Questionario questionario = jpaUtil.findUtenteQuestionarioByUtenteQuestionarioId(utenteQuestionarioId);
-            Utente utente = jpaUtil.findUserByUtenteQuestionario(utenteQuestionarioId);
+            Questionario questionario = jPAUtil.findUtenteQuestionarioByUtenteQuestionarioId(utenteQuestionarioId);
+            Utente utente = jPAUtil.findUserByUtenteQuestionario(utenteQuestionarioId);
 
             JSONObject jsonRisposte = new JSONObject(questionario.getRisposte());
             JSONObject risposte2 = jsonRisposte.getJSONObject("risposte");
@@ -234,7 +241,26 @@ public class VisualizzaQuestionario extends HttpServlet {
             document.add(new Paragraph("Risposte errate: " + risposteErrate, fontBoldRed));
 
             document.close();
+            InfoTrack infoTrack = new InfoTrack("READ,CREATE",
+                    "VisualizzaQuestionario - Servlet - generaPdfQuestionario",
+                    200,
+                    "Il questionario con id " + questionario.getId() + " per il seguente utente con id : " + utente.getId() + " in formato PDF è stato generato con successo.",
+                    "Servlet chiamata dall'utente con id " + userId_sessione + ".",
+                    null,
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jPAUtil.SalvaInfoTrack(infoTrack, logger);
         } catch (Exception e) {
+            Utente utente = jPAUtil.findUserByUtenteQuestionario(utenteQuestionarioId);
+            InfoTrack infoTrack = new InfoTrack("READ,CREATE",
+                    "Questionario controller - API - (/visualizzaPdf)",
+                    500,
+                    "Errore - Il questionario con id " + utenteQuestionarioId + " dell'utente " + utente.getId() + " non è stato generato.",
+                    "API chiamata dall'utente con id " + userId_sessione + ".",
+                    Utils.estraiEccezione(e),
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jPAUtil.SalvaInfoTrack(infoTrack, logger);
             logger.error("Non è stato possibile generare il pdf del questionario\n" + Utils.estraiEccezione(e));
         }
     }
@@ -270,10 +296,12 @@ public class VisualizzaQuestionario extends HttpServlet {
         return null;
     }
 
-    private static List<String> cleanHtmlFromList(List<String> lista) {
+    public static List<String> cleanHtmlFromList(List<String> lista) {
         List<String> pulita = new ArrayList<>();
         for (String s : lista) {
-            pulita.add(s.replaceAll("<[^>]*>", "").trim());
+            String cleaned = s.replaceAll("<[^>]*>", "").trim();
+            cleaned = StringEscapeUtils.unescapeHtml4(cleaned);
+            pulita.add(cleaned);
         }
         return pulita;
     }

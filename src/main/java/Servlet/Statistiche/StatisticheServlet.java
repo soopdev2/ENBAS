@@ -5,6 +5,7 @@
 package Servlet.Statistiche;
 
 import Entity.Digicomp;
+import Entity.InfoTrack;
 import Entity.Questionario;
 import Entity.Utente;
 import Utils.JPAUtil;
@@ -23,7 +24,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.OutputStreamWriter;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,6 +62,7 @@ public class StatisticheServlet extends HttpServlet {
     public static final String APPJSON = "application/json";
     public static final String CONTENTTYPE = "Content-Type";
     public static final String AADATA = "aaData";
+    public static JPAUtil jpaUtil;
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -66,12 +70,14 @@ public class StatisticheServlet extends HttpServlet {
         boolean isGeneraExcel = Boolean.parseBoolean(request.getParameter("isGeneraExcel"));
         boolean isControllaDigicomp = Boolean.parseBoolean(request.getParameter("isControllaDigicomp"));
         final Logger LOGGER = LoggerFactory.getLogger(StatisticheServlet.class.getName());
+        HttpSession session = request.getSession();
+        String userId = Utils.checkAttribute(session, "userId");
         if (isSearch) {
             RicercaUtentiServlet(request, response, LOGGER);
         } else if (isGeneraExcel) {
-            EstraiExcelUtenteServlet(request, response, LOGGER);
+            EstraiExcelUtenteServlet(request, response, LOGGER, userId);
         } else if (isControllaDigicomp) {
-            ControllaDigicompServlet(request, response, LOGGER);
+            ControllaDigicompServlet(request, response, LOGGER, userId);
         }
     }
 
@@ -132,7 +138,6 @@ public class StatisticheServlet extends HttpServlet {
                     } else {
                         jsonUtente.addProperty("ruolo", "non disponibile");
                     }
-                    JPAUtil jpaUtil = new JPAUtil();
                     Questionario ultimoQuestionario = jpaUtil.findUltimoQuestionarioCompletatoPerUtente(utente);
 
                     if (ultimoQuestionario != null) {
@@ -163,8 +168,7 @@ public class StatisticheServlet extends HttpServlet {
     }
 
     public static List<Utente> ricercaUtenti(int start, int pageSize, Long utenteId, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
         List<Utente> resultList = new ArrayList<>();
 
         try {
@@ -198,8 +202,7 @@ public class StatisticheServlet extends HttpServlet {
     }
 
     public static long countUtenti(Long utenteId, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
         long totalRecords = 0;
 
         try {
@@ -224,8 +227,9 @@ public class StatisticheServlet extends HttpServlet {
         return totalRecords;
     }
 
-    public static void EstraiExcelUtenteServlet(HttpServletRequest request, HttpServletResponse response, Logger logger)
+    public static void EstraiExcelUtenteServlet(HttpServletRequest request, HttpServletResponse response, Logger logger, String userId)
             throws ServletException, IOException {
+        Utente utente = new Utente();
 
         try {
             String utenteIdStr = request.getParameter("utente_id");
@@ -236,8 +240,7 @@ public class StatisticheServlet extends HttpServlet {
                 return;
             }
 
-            JPAUtil jpaUtil = new JPAUtil();
-            Utente utente = jpaUtil.findUserByUserId(utenteIdStr);
+            utente = jpaUtil.findUserByUserId(utenteIdStr);
 
             if (utente == null) {
                 logger.warn("Utente non trovato per ID: " + utenteIdStr);
@@ -258,18 +261,37 @@ public class StatisticheServlet extends HttpServlet {
                 return;
             }
 
+            Utente utente_sessione = jpaUtil.findUserByUserId(userId);
+
             jpaUtil.createExcel(ultimoQuestionario, response);
+            InfoTrack infoTrack = new InfoTrack("READ",
+                    "StatisticheServlet - Servlet - EstraiExcelUtenteServlet",
+                    200,
+                    "Excel dell'utenza con id " + utente_sessione.getId() + " generato.",
+                    "Servlet chiamata dall'utente con id " + utente_sessione.getId() + ".",
+                    null,
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jpaUtil.SalvaInfoTrack(infoTrack, logger);
 
         } catch (IOException e) {
             logger.error("Errore durante l'estrazione dell'Excel per l'utente:\n" + Utils.estraiEccezione(e));
+            InfoTrack infoTrack = new InfoTrack("READ",
+                    "StatisticheServlet - Servlet - EstraiExcelUtenteServlet",
+                    500,
+                    "Errore - Excel dell'utenza con id " + utente.getId() + " non generato.",
+                    "Servlet chiamata dall'utente con id " + userId + ".",
+                    Utils.estraiEccezione(e),
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+            jpaUtil.SalvaInfoTrack(infoTrack, logger);
+
             response.sendRedirect("AD_statistiche.jsp?esito=KO3&codice=007");
         }
     }
 
-    public static void ControllaDigicompServlet(HttpServletRequest request, HttpServletResponse response, Logger logger)
+    public static void ControllaDigicompServlet(HttpServletRequest request, HttpServletResponse response, Logger logger, String userId)
             throws ServletException, IOException {
 
-        JPAUtil jpaUtil = new JPAUtil();
         try {
             List<Utente> utenti = jpaUtil.findAllUtenti();
             ObjectMapper objectMapper = new ObjectMapper();
@@ -384,6 +406,18 @@ public class StatisticheServlet extends HttpServlet {
 
                 if (avanzare) {
                     jpaUtil.assegnaNuovoQuestionario(ultimoQuestionario, livelloCorrente);
+
+                    Utente utente_sessione = jpaUtil.findUserByUserId(userId);
+
+                    InfoTrack infoTrack = new InfoTrack("READ,CREATE",
+                            "StatisticheServlet - Servlet - ControllaDigicompServlet",
+                            200,
+                            "Controllo effettuato con successo.",
+                            "Servlet chiamata dall'utente con id " + utente_sessione.getId() + ".",
+                            null,
+                            Utils.formatLocalDateTime(LocalDateTime.now()));
+
+                    jpaUtil.SalvaInfoTrack(infoTrack, logger);
                     response.sendRedirect("AD_statistiche.jsp?esito=OK&codice=007");
                 } else {
                     logger.info("Il questionario con ID " + ultimoQuestionario.getId() + " per l'utente " + utente.getId() + " non ha superato il livello " + livelloCorrente);
@@ -395,6 +429,14 @@ public class StatisticheServlet extends HttpServlet {
             }
         } catch (JsonProcessingException e) {
             logger.error("Non è stato possibile effettuare il controllo sui questionari di tipo Digicomp" + "\n" + estraiEccezione(e));
+            InfoTrack infoTrack = new InfoTrack("READ,CREATE",
+                    "StatisticheServlet - Servlet - ControllaDigicompServlet",
+                    500,
+                    "Errore - Controllo non effettuato con successo.",
+                    "Servlet chiamata dall'utente con id " + userId + ".",
+                    Utils.estraiEccezione(e),
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+            jpaUtil.SalvaInfoTrack(infoTrack, logger);
             response.sendRedirect("AD_statistiche.jsp?esito=KO5&codice=007");
         }
     }

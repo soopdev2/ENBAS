@@ -10,6 +10,7 @@ import Entity.Competenza;
 import Entity.Digicomp;
 import Entity.DigicompDomanda;
 import Entity.Domanda;
+import Entity.InfoTrack;
 import Entity.ModelloPredefinito;
 import Entity.Pagina;
 import Entity.Questionario;
@@ -17,6 +18,7 @@ import Entity.Ruolo;
 import Entity.SottoCategoria;
 import Entity.Utente;
 import Enum.Assegnabile_enum;
+import Enum.Disponibilità_utente;
 import Enum.Si_no;
 import Enum.Stato_questionario;
 import Enum.Stato_utente;
@@ -24,6 +26,7 @@ import Enum.Tipo_domanda;
 import Enum.Tipo_inserimento;
 import Enum.Visibilità_domanda;
 import static Utils.Utils.estraiEccezione;
+import static Utils.Utils.normalizeHtml;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +36,10 @@ import jakarta.persistence.Persistence;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,6 +48,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
@@ -58,6 +65,7 @@ public class JPAUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JPAUtil.class.getName());
     private static final EntityManagerFactory emf = Persistence.createEntityManagerFactory("gestionale_questionario");
+    JPAUtil jpaUtil = new JPAUtil();
 
     public EntityManager getEm() {
         return emf.createEntityManager();
@@ -1025,7 +1033,7 @@ public class JPAUtil {
         );
     }
 
-    public void createExcel(Questionario ultimoQuestionario, HttpServletResponse response) {
+    public void createExcel(Questionario ultimoQuestionario, HttpServletResponse response) throws IOException {
         EntityManager em = this.getEm();
         try {
             List<Long> utentiIds = ultimoQuestionario.getUtenti()
@@ -1034,36 +1042,128 @@ public class JPAUtil {
                     .collect(Collectors.toList());
 
             List<Questionario> questionari = getQuestionariCompletati(em, utentiIds);
-            questionari.add(ultimoQuestionario);
+
+            boolean esisteCompletato2ConId1 = questionari.stream()
+                    .filter(q -> Stato_questionario.COMPLETATO2.equals(q.getDescrizione()))
+                    .anyMatch(q -> q.getDigicomp_questionario().stream().anyMatch(d -> d.getId() == 1));
+
+            if (!esisteCompletato2ConId1) {
+                questionari.add(ultimoQuestionario);
+            }
 
             Map<Long, Map<Long, int[]>> categoriaSottocategoriaStats = new HashMap<>();
 
-            for (Questionario questionario : questionari) {
-                processaRisposte(questionario, categoriaSottocategoriaStats);
-            }
+            Optional<Questionario> questionarioConDigicomp1 = questionari.stream()
+                    .filter(q -> q.getDescrizione().equals(Stato_questionario.COMPLETATO))
+                    .filter(q -> q.getStatus() == 3)
+                    .filter(q -> q.getDigicomp_questionario()
+                    .stream()
+                    .anyMatch(d -> d.getId() == 1))
+                    .findFirst();
 
+            if (questionarioConDigicomp1.isPresent()) {
+                LOGGER.info("Trovato questionario con Digicomp ID 1, stato COMPLETATO e status 3: processa solo questo (ID: " + questionarioConDigicomp1.get().getId() + ")");
+                processaRisposte(questionarioConDigicomp1.get(), categoriaSottocategoriaStats);
+            } else {
+                for (Questionario questionario : questionari) {
+                    System.out.println("QUESTIONARIO id" + questionario);
+                    processaRisposte(questionario, categoriaSottocategoriaStats);
+                }
+            }
             Utils utils = new Utils();
             utils.generaExcel(categoriaSottocategoriaStats, response);
 
         } catch (Exception e) {
             LOGGER.error("Errore nella generazione del file Excel: " + estraiEccezione(e));
+            response.sendRedirect("AD_statistiche.jsp?esito=KO3&codice=007");
         } finally {
             if (em != null) {
                 em.close();
-
             }
         }
     }
 
-    private List<Questionario> getQuestionariCompletati(EntityManager em, List<Long> utentiIds) {
+    public List<Questionario> getQuestionariCompletati(EntityManager em, List<Long> utentiIds) {
         TypedQuery<Questionario> query = em.createQuery(
-                "SELECT q FROM Questionario q JOIN q.utenti u JOIN q.digicomp_questionario dq "
-                + "WHERE u.id IN :utentiIds AND q.descrizione = :stato ORDER BY dq.id",
+                "SELECT DISTINCT q FROM Questionario q "
+                + "JOIN q.utenti u "
+                + "LEFT JOIN FETCH q.digicomp_questionario dq "
+                + "WHERE u.id IN :utentiIds "
+                + "AND (q.descrizione = :completato OR q.descrizione = :completato2) "
+                + "ORDER BY q.dataDiAssegnazione DESC",
                 Questionario.class
         );
         query.setParameter("utentiIds", utentiIds);
-        query.setParameter("stato", Stato_questionario.COMPLETATO2);
-        return query.getResultList();
+        query.setParameter("completato", Stato_questionario.COMPLETATO);
+        query.setParameter("completato2", Stato_questionario.COMPLETATO2);
+
+        List<Questionario> tutti = query.getResultList();
+
+        Map<Long, Questionario> ultimoCompletato2PerUtente = new HashMap<>();
+        for (Questionario q : tutti) {
+            if (!Stato_questionario.COMPLETATO2.equals(q.getDescrizione())) {
+                continue;
+            }
+
+            boolean hasDigicomp1 = q.getDigicomp_questionario().stream().anyMatch(d -> d.getId() == 1);
+            if (!hasDigicomp1) {
+                continue;
+            }
+
+            for (Utente u : q.getUtenti()) {
+                Long userId = u.getId();
+                Questionario esistente = ultimoCompletato2PerUtente.get(userId);
+                if (esistente == null || confrontaDate(q.getDataDiAssegnazione(), esistente.getDataDiAssegnazione()) > 0) {
+                    ultimoCompletato2PerUtente.put(userId, q);
+                }
+            }
+        }
+
+        Map<Long, Boolean> utentiBloccati = new HashMap<>();
+        List<Questionario> risultati = new ArrayList<>();
+
+        for (Questionario q : tutti) {
+            for (Utente u : q.getUtenti()) {
+                Long userId = u.getId();
+
+                if (utentiBloccati.getOrDefault(userId, false)) {
+                    continue;
+                }
+
+                Questionario ultimoCompletato2 = ultimoCompletato2PerUtente.get(userId);
+                if (ultimoCompletato2 == null) {
+                    continue;
+                }
+
+                if (confrontaDate(q.getDataDiAssegnazione(), ultimoCompletato2.getDataDiAssegnazione()) < 0) {
+                    continue;
+                }
+
+                boolean blocca = q.getStatus() == 3
+                        && Stato_questionario.COMPLETATO.equals(q.getDescrizione())
+                        && q.getDigicomp_questionario().stream().anyMatch(d -> d.getId() == 1);
+                if (blocca) {
+                    utentiBloccati.put(userId, true);
+                    continue;
+                }
+
+                if (Stato_questionario.COMPLETATO.equals(q.getDescrizione())
+                        || Stato_questionario.COMPLETATO2.equals(q.getDescrizione())) {
+                    risultati.add(q);
+                }
+            }
+        }
+
+        return risultati.stream()
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private int confrontaDate(String data1, String data2) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        LocalDateTime d1 = LocalDateTime.parse(data1, formatter);
+        LocalDateTime d2 = LocalDateTime.parse(data2, formatter);
+        return d1.compareTo(d2);
     }
 
     private void processaRisposte(Questionario questionario, Map<Long, Map<Long, int[]>> categoriaSottocategoriaStats) {
@@ -1110,61 +1210,85 @@ public class JPAUtil {
         try {
             Map<String, Map<String, String>> risposte = getRisposteFromJson(questionario.getRisposte());
             if (risposte == null) {
+                LOGGER.warn("Le risposte del questionario sono nulle.");
                 return false;
             }
 
             String idDomanda = String.valueOf(domanda.getId());
             if (!risposte.containsKey(idDomanda)) {
+                LOGGER.warn("Nessuna risposta trovata per la domanda ID: " + idDomanda);
                 return false;
             }
 
             Map<String, String> dettagliRisposta = risposte.get(idDomanda);
 
             if (dettagliRisposta.containsKey("risposta") && dettagliRisposta.containsKey("risposta corretta")) {
-                String rispostaUtente = dettagliRisposta.get("risposta").trim();
-                String rispostaCorretta = Utils.escapeHtmlAttribute(dettagliRisposta.get("risposta corretta").trim());
+                String rispostaUtente = normalizeHtml(dettagliRisposta.get("risposta"));
+                String rispostaCorretta = normalizeHtml(dettagliRisposta.get("risposta corretta"));
 
-                rispostaUtente = Utils.removeHtmlTags(rispostaUtente);
-                rispostaCorretta = Utils.removeHtmlTags(rispostaCorretta);
+                LOGGER.info("Verifica risposta singola - Domanda ID " + idDomanda
+                        + ": Utente = '" + rispostaUtente + "', Corretta = '" + rispostaCorretta + "'");
 
-                LOGGER.info("Controllando la risposta corretta per domanda ID " + idDomanda + ": Risposta dell'utente = " + rispostaUtente + ", Risposta corretta = " + rispostaCorretta);
-
-                return rispostaUtente.equalsIgnoreCase(rispostaCorretta);
+                boolean esito = rispostaUtente.equalsIgnoreCase(rispostaCorretta);
+                logEsito(idDomanda, esito, rispostaCorretta, rispostaUtente);
+                return esito;
             }
 
-            if (dettagliRisposta.containsKey("risposta_testuale")) {
-                String[] rispostaUtenteArray = dettagliRisposta.get("risposta_testuale").split(",");
-                String[] rispostaCorrettaArray = Utils.escapeHtmlAttribute(dettagliRisposta.get("testi_risposte_corrette")).split(",");
-
-                List<String> rispostaUtenteList = Arrays.stream(rispostaUtenteArray)
-                        .map(r -> Utils.removeHtmlTags(r.trim()))
+            if (dettagliRisposta.containsKey("risposta_testuale") && dettagliRisposta.containsKey("testi_risposte_corrette")) {
+                List<String> rispostaUtenteList = Arrays.stream(dettagliRisposta.get("risposta_testuale").split(","))
+                        .map(s -> normalizeHtml(s).trim())
+                        .filter(s -> !s.isEmpty())
                         .sorted()
                         .collect(Collectors.toList());
 
-                List<String> risposteCorretteList = Arrays.stream(rispostaCorrettaArray)
-                        .map(r -> Utils.removeHtmlTags(r.trim()))
+                List<String> risposteCorretteList = Arrays.stream(dettagliRisposta.get("testi_risposte_corrette").split(","))
+                        .map(s -> normalizeHtml(s).trim())
+                        .filter(s -> !s.isEmpty())
                         .sorted()
                         .collect(Collectors.toList());
 
-                LOGGER.info("Controllando la risposta corretta per domanda ID " + idDomanda + ": Risposta dell'utente = " + rispostaUtenteList + ", Risposta corretta = " + risposteCorretteList);
+                LOGGER.info("Verifica risposta testuale multipla - Domanda ID " + idDomanda
+                        + ": Utente = " + rispostaUtenteList + ", Corretta = " + risposteCorretteList);
 
-                return rispostaUtenteList.equals(risposteCorretteList);
+                boolean esito = rispostaUtenteList.equals(risposteCorretteList);
+                logEsito(idDomanda, esito, risposteCorretteList.toString(), rispostaUtenteList.toString());
+                return esito;
             }
 
             if (dettagliRisposta.containsKey("risposta_id") && dettagliRisposta.containsKey("risposte_corrette")) {
-                Set<String> rispostaUtenteSet = new HashSet<>(Arrays.asList(dettagliRisposta.get("risposta_id").split(",")));
-                Set<String> risposteCorretteSet = new HashSet<>(Arrays.asList(dettagliRisposta.get("risposte_corrette").split(",")));
+                Set<String> rispostaUtenteSet = Arrays.stream(dettagliRisposta.get("risposta_id").split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toSet());
 
-                LOGGER.info("Controllando la/e risposta/a corretta/e per domanda ID " + idDomanda + ": Risposta/i dell'utente = " + rispostaUtenteSet + ", Risposta/i corretta/e = " + risposteCorretteSet);
+                Set<String> risposteCorretteSet = Arrays.stream(dettagliRisposta.get("risposte_corrette").split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toSet());
 
-                return rispostaUtenteSet.equals(risposteCorretteSet);
+                LOGGER.info("Verifica risposta ID multipla - Domanda ID " + idDomanda
+                        + ": Utente = " + rispostaUtenteSet + ", Corretta = " + risposteCorretteSet);
+
+                boolean esito = rispostaUtenteSet.equals(risposteCorretteSet);
+                logEsito(idDomanda, esito, risposteCorretteSet.toString(), rispostaUtenteSet.toString());
+                return esito;
             }
 
+            LOGGER.warn("Formato risposta non riconosciuto per domanda ID " + idDomanda);
             return false;
 
         } catch (Exception e) {
-            LOGGER.error("Errore nell'estrazione della risposta corretta dalla domanda: " + estraiEccezione(e));
+            LOGGER.error("Errore nell'estrazione della risposta corretta per la domanda ID "
+                    + domanda.getId() + ": " + estraiEccezione(e));
             return false;
+        }
+    }
+
+    private void logEsito(String idDomanda, boolean esito, String atteso, String ricevuto) {
+        if (esito) {
+            LOGGER.info("Risposta corretta per domanda ID " + idDomanda);
+        } else {
+            LOGGER.info("Risposta ERRATA per domanda ID " + idDomanda + ". Atteso: '" + atteso + "', Ricevuto: '" + ricevuto + "'");
         }
     }
 
@@ -1439,7 +1563,7 @@ public class JPAUtil {
         return resultList;
     }
 
-    public void creaDomanda(Categoria categoria, Competenza competenza, String stato, String titolo, String nome_domanda, String[] risposta_text, String[] si_no_select, Logger logger) {
+    public void creaDomanda(Categoria categoria, Competenza competenza, String stato, String titolo, String nome_domanda, String[] risposta_text, String[] si_no_select, String userId, Logger logger) {
         JPAUtil jPAUtil = new JPAUtil();
         EntityManager em = jPAUtil.getEm();
         JSONObject jSONObject = new JSONObject();
@@ -1517,10 +1641,29 @@ public class JPAUtil {
             em.persist(domanda);
             em.getTransaction().commit();
 
+            Utente utente = jpaUtil.findUserByUserId(userId);
+
             logger.info("Domanda creata con successo! " + sdf.format(new Date()));
+            InfoTrack infoTrack = new InfoTrack("CREATE",
+                    "GestioneDomande - SERVLET - creaDomanda",
+                    200,
+                    "Nuova domanda creata con successo. Id : " + domanda.getId(),
+                    "Servlet chiamata dall'utente con id " + utente.getId() + ".",
+                    null,
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jpaUtil.SalvaInfoTrack(infoTrack, LOGGER);
 
         } catch (Exception e) {
             logger.error("Non è stato possibile creare la nuova domanda" + "\n" + Utils.estraiEccezione(e));
+            InfoTrack infoTrack = new InfoTrack("CREATE",
+                    "GestioneDomande - SERVLET - creaDomanda",
+                    500,
+                    "Errore - Nuova domanda " + "non creata.",
+                    "Servlet chiamata dall'utente con id " + userId + ".",
+                    Utils.estraiEccezione(e),
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+            jpaUtil.SalvaInfoTrack(infoTrack, LOGGER);
             if (em != null && em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
@@ -1656,9 +1799,41 @@ public class JPAUtil {
         }
     }
 
+    public void resettaDisponibilitàUtente(Long userId, Logger logger) {
+        JPAUtil jPAUtil = new JPAUtil();
+        EntityManager em = jPAUtil.getEm();
+
+        try {
+            Utente vecchioUtente = em.find(Utente.class, userId);
+            if (vecchioUtente == null) {
+                logger.error("Utenza con id " + userId + " non trovata.");
+                return;
+            }
+
+            em.getTransaction().begin();
+
+            if (vecchioUtente.getDisponibilità_utente().equals(Disponibilità_utente.NON_DISPONIBILE)) {
+                vecchioUtente.setDisponibilità_utente(Disponibilità_utente.DISPONIBILE);
+            }
+            em.merge(vecchioUtente);
+            em.getTransaction().commit();
+
+            logger.info("Utenza aggiornata con successo! id: " + userId);
+        } catch (Exception e) {
+            logger.error("Errore nell'aggiornamento dell'utenza con id " + userId + "\n" + Utils.estraiEccezione(e));
+            if (em != null && em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
     public void modificaDomanda(Long domanda_id, Categoria categoria, Competenza competenza, String stato,
             String titolo, String nome_domanda, String[] risposta_text, String[] idRisposte,
-            String[] si_no_select, Logger logger) {
+            String[] si_no_select, String userId, Logger logger) {
         JPAUtil jPAUtil = new JPAUtil();
         EntityManager em = jPAUtil.getEm();
 
@@ -1787,9 +1962,28 @@ public class JPAUtil {
             em.merge(vecchiaDomanda);
             em.getTransaction().commit();
 
+            Utente utente = jpaUtil.findUserByUserId(userId);
+
             logger.info("Domanda aggiornata con successo! ID: " + domanda_id);
+            InfoTrack infoTrack = new InfoTrack("UPDATE",
+                    "GestioneDomande - SERVLET - modificaDomanda",
+                    200,
+                    "Domanda con id " + domanda_id + " aggiornata con successo.",
+                    "Servlet chiamata dall'utente con id " + utente.getId() + ".",
+                    null,
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jpaUtil.SalvaInfoTrack(infoTrack, LOGGER);
         } catch (Exception e) {
             logger.error("Errore nell'aggiornamento della domanda con ID " + domanda_id + "\n" + Utils.estraiEccezione(e));
+            InfoTrack infoTrack = new InfoTrack("UPDATE",
+                    "GestioneDomande - SERVLET - modificaDomanda",
+                    500,
+                    "Errore - Domanda con id " + domanda_id + "non aggiornata.",
+                    "Servlet chiamata dall'utente con id " + userId + ".",
+                    Utils.estraiEccezione(e),
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+            jpaUtil.SalvaInfoTrack(infoTrack, LOGGER);
             if (em != null && em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
@@ -1798,6 +1992,29 @@ public class JPAUtil {
                 em.close();
             }
         }
+    }
+
+    public void SalvaInfoTrack(InfoTrack infoTrack, Logger logger) {
+        JPAUtil jPAUtil = new JPAUtil();
+        EntityManager em = jPAUtil.getEm();
+        try {
+            if (infoTrack != null) {
+                em.getTransaction().begin();
+                em.persist(infoTrack);
+                em.getTransaction().commit();
+                logger.info("InfoTrack creato con successo! id: " + infoTrack.getId());
+            }
+        } catch (Exception e) {
+            logger.error("Non è stato possibile creare un nuovo InfoTrack" + "\n" + Utils.estraiEccezione(e));
+            if (em != null && em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+
     }
 
 }

@@ -7,6 +7,8 @@ package Servlet.Domande;
 import Entity.Categoria;
 import Entity.Competenza;
 import Entity.Domanda;
+import Entity.InfoTrack;
+import Entity.Utente;
 import Enum.Visibilità_domanda;
 import Utils.JPAUtil;
 import Utils.Utils;
@@ -17,8 +19,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
@@ -48,6 +52,7 @@ public class GestioneDomande extends HttpServlet {
     public static final String APPJSON = "application/json";
     public static final String CONTENTTYPE = "Content-Type";
     public static final String AADATA = "aaData";
+    public static JPAUtil jpaUtil = new JPAUtil();
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -56,9 +61,11 @@ public class GestioneDomande extends HttpServlet {
         boolean isCreate = Boolean.parseBoolean(request.getParameter("isCreate"));
         boolean isEdit = Boolean.parseBoolean(request.getParameter("isEdit"));
         final Logger LOGGER = LoggerFactory.getLogger(GestioneDomande.class.getName());
+        HttpSession session = request.getSession();
+        String userId = Utils.checkAttribute(session, "userId");
 
         if (isSearch) {
-            RicercaDomandeServlet(request, response, LOGGER);
+            RicercaDomandeServlet(request, response, LOGGER, userId);
         } else if (isCreate) {
             CreaDomandeServlet(request, response, LOGGER);
         } else if (isEdit) {
@@ -66,7 +73,7 @@ public class GestioneDomande extends HttpServlet {
         }
     }
 
-    public static void RicercaDomandeServlet(HttpServletRequest request, HttpServletResponse response, Logger logger)
+    public static void RicercaDomandeServlet(HttpServletRequest request, HttpServletResponse response, Logger logger, String userId)
             throws ServletException, IOException {
         try {
 
@@ -76,7 +83,6 @@ public class GestioneDomande extends HttpServlet {
             String area_competenza = request.getParameter("area_competenza");
             String competenza = request.getParameter("competenza");
             String stato = request.getParameter("stato");
-            JPAUtil jpaUtil = new JPAUtil();
 
             long totalRecords = jpaUtil.countDomande(area, area_competenza, competenza, stato, logger);
 
@@ -156,6 +162,18 @@ public class GestioneDomande extends HttpServlet {
                 jsonData.add(jsonDomande);
             }
 
+            Utente utente = jpaUtil.findUserByUserId(userId);
+
+            InfoTrack infoTrack = new InfoTrack("READ",
+                    "GestioneDomande - SERVLET - ricercaDomandaServlet",
+                    200,
+                    "Domande trovate con successo. " + jsonData.toString(),
+                    "Servlet chiamata dall'utente con id " + utente.getId() + ".",
+                    null,
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jpaUtil.SalvaInfoTrack(infoTrack, logger);
+
             jsonResponse.add("aaData", jsonData);
 
             response.setContentType("application/json");
@@ -166,7 +184,16 @@ public class GestioneDomande extends HttpServlet {
             }
 
         } catch (Exception e) {
-            logger.error("Non è stato possibile effettuare la ricerca dei questionari (ADMIN)" + "\n" + Utils.estraiEccezione(e));
+            logger.error("Non è stato possibile effettuare la ricerca delle domande" + "\n" + Utils.estraiEccezione(e));
+            InfoTrack infoTrack = new InfoTrack("READ",
+                    "GestioneDomande - SERVLET - ricercaDomandaServlet",
+                    500,
+                    "Errore - Domande non trovate. ",
+                    "Servlet chiamata dall'utente con id " + userId + ".",
+                    Utils.estraiEccezione(e),
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+            jpaUtil.SalvaInfoTrack(infoTrack, logger);
+
         }
     }
 
@@ -174,7 +201,6 @@ public class GestioneDomande extends HttpServlet {
             throws ServletException, IOException {
 
         try {
-            JPAUtil jpaUtil = new JPAUtil();
 
             String area_id_param = request.getParameter("area");
             Long areaId = Utils.tryParseLong(area_id_param);
@@ -194,7 +220,10 @@ public class GestioneDomande extends HttpServlet {
 
             String[] si_no_select = request.getParameterValues("si_no_select");
 
-            jpaUtil.creaDomanda(categoria, competenza, stato, titolo, nome_domanda, risposta_text, si_no_select, logger);
+            HttpSession session = request.getSession();
+            String userId = session.getAttribute("userId").toString();
+
+            jpaUtil.creaDomanda(categoria, competenza, stato, titolo, nome_domanda, risposta_text, si_no_select, userId, logger);
             response.sendRedirect("AD_crea_domanda.jsp?esito=OK&codice=005");
 
         } catch (Exception e) {
@@ -206,7 +235,6 @@ public class GestioneDomande extends HttpServlet {
     public static void ModificaDomandeServlet(HttpServletRequest request, HttpServletResponse response, Logger logger)
             throws ServletException, IOException {
         try {
-            JPAUtil jpaUtil = new JPAUtil();
 
             String domanda_id_param = request.getParameter("domanda_id");
             Long domanda_id = Utils.tryParseLong(domanda_id_param);
@@ -231,7 +259,10 @@ public class GestioneDomande extends HttpServlet {
 
             String[] idRisposte = request.getParameterValues("id_risposta[]");
 
-            jpaUtil.modificaDomanda(domanda_id, categoria, competenza, stato, titolo, nome_domanda, risposta_text, idRisposte, si_no_select, logger);
+            HttpSession session = request.getSession();
+            String userId = session.getAttribute("userId").toString();
+
+            jpaUtil.modificaDomanda(domanda_id, categoria, competenza, stato, titolo, nome_domanda, risposta_text, idRisposte, si_no_select, userId, logger);
             response.sendRedirect("AD_gestione_domande.jsp?esito=OK&codice=006");
 
         } catch (Exception e) {

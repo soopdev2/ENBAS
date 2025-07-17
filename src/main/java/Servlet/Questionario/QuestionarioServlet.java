@@ -8,9 +8,11 @@ import Entity.AreeCompetenze;
 import Entity.Categoria;
 import Entity.Digicomp;
 import Entity.Domanda;
+import Entity.InfoTrack;
 import Entity.ModelloPredefinito;
 import Entity.Questionario;
 import Entity.Utente;
+import Enum.Disponibilità_utente;
 import Enum.Stato_questionario;
 import Enum.Tipo_inserimento;
 import Enum.Visibilità_domanda;
@@ -76,6 +78,7 @@ public class QuestionarioServlet extends HttpServlet {
     public static final String CONTENTTYPE = "Content-Type";
     public static final String AADATA = "aaData";
     public static final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+    public static JPAUtil jpaUtil;
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -86,26 +89,27 @@ public class QuestionarioServlet extends HttpServlet {
         boolean isSearch = Boolean.parseBoolean(request.getParameter("isSearch"));
         boolean isUser = Boolean.parseBoolean(request.getParameter("isUser"));
         final Logger LOGGER = LoggerFactory.getLogger(QuestionarioServlet.class.getName());
+        HttpSession session = request.getSession();
+        String userId = Utils.checkAttribute(session,"userId");
 
         if (isContinueLater) {
-            SalvaProgressi(request, response, LOGGER);
+            SalvaProgressi(request, response, LOGGER, userId);
         } else if (isIniziaQuestionario) {
-            SalvaStatoQuestionarioPresoInCarico(request, LOGGER);
+            SalvaStatoQuestionarioPresoInCarico(request, LOGGER, userId);
         } else if (isSet) {
-            AssegnaQuestionario(request, response, LOGGER);
+            AssegnaQuestionario(request, response, LOGGER, userId);
         } else if (isSearch && isUser) {
             RicercaArchiviUtentiServlet(request, response, LOGGER);
         } else if (isSearch) {
             RicercaArchiviServlet(request, response, LOGGER);
         } else {
-            SalvaQuestionario(request, response, LOGGER);
+            SalvaQuestionario(request, response, LOGGER, userId);
         }
 
     }
 
-    private void AssegnaQuestionario(HttpServletRequest request, HttpServletResponse response, Logger logger) throws IOException {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+    private void AssegnaQuestionario(HttpServletRequest request, HttpServletResponse response, Logger logger, String userId_sessione) throws IOException {
+        EntityManager em = jpaUtil.getEm();
 
         try {
             em.getTransaction().begin();
@@ -132,7 +136,7 @@ public class QuestionarioServlet extends HttpServlet {
                                 Utente utente = em.find(Utente.class, userId);
 
                                 if (utente != null) {
-                                    Questionario questionario = jPAUtil.findUtenteQuestionarioIdByUserId(userId);
+                                    Questionario questionario = jpaUtil.findUtenteQuestionarioIdByUserId(userId);
                                     if (questionario != null && questionario.getDescrizione().equals(Stato_questionario.COMPLETATO)
                                             && questionario.getStatus() == 3 || questionario == null) {
 
@@ -142,12 +146,21 @@ public class QuestionarioServlet extends HttpServlet {
                                         utenteQuestionario.setStatus(0);
                                         utenteQuestionario.setDescrizione(Stato_questionario.ASSEGNATO);
 
-                                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
                                         Date date = new Date();
                                         String formattedDate = sdf.format(date);
                                         utenteQuestionario.setDataDiAssegnazione(formattedDate);
 
                                         em.persist(utenteQuestionario);
+                                        Utente utente_sessione = jpaUtil.findUserByUserId(userId_sessione);
+                                        InfoTrack infoTrack = new InfoTrack("CREATE",
+                                                "QuestionarioServlet - Servlet - AssegnaQuestionario",
+                                                200,
+                                                "Questionario assegnato con successo per il/i seguente/i utente/i con id : " + userId,
+                                                "API chiamata dall'utente con id " + utente_sessione.getId() + ".",
+                                                null,
+                                                Utils.formatLocalDateTime(LocalDateTime.now()));
+
+                                        jpaUtil.SalvaInfoTrack(infoTrack, logger);
                                         logger.info("Questionario assegnato con successo all'utente con id " + userId + " in data " + sdf.format(new Date()));
                                     } else {
                                         if (!response.isCommitted()) {
@@ -163,6 +176,14 @@ public class QuestionarioServlet extends HttpServlet {
                                 }
                             } catch (IOException e) {
                                 logger.error("Non è stato possibile assegnare un nuovo questionario" + "\n" + Utils.estraiEccezione(e));
+                                InfoTrack infoTrack = new InfoTrack("CREATE",
+                                        "QuestionarioServlet - Servlet - AssegnaQuestionario",
+                                        500,
+                                        "Errore - Questionario/i non assegnato/i. ",
+                                        "API chiamata dall'utente con id " + userId_sessione + ".",
+                                        Utils.estraiEccezione(e),
+                                        Utils.formatLocalDateTime(LocalDateTime.now()));
+                                jpaUtil.SalvaInfoTrack(infoTrack, logger);
                             }
                         }
 
@@ -196,8 +217,7 @@ public class QuestionarioServlet extends HttpServlet {
     }
 
     private void assegnaQuestionarioCategoria(String categoriaSelect, String numeroDomande, String[] assegna_questionario_select_utente, HttpServletResponse response, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
 
         try {
             em.getTransaction().begin();
@@ -221,7 +241,7 @@ public class QuestionarioServlet extends HttpServlet {
                 Utente utente = em.find(Utente.class, userId);
 
                 if (utente != null) {
-                    Questionario ultimo_questionario = jPAUtil.findUtenteQuestionarioIdByUserId(userId);
+                    Questionario ultimo_questionario = jpaUtil.findUtenteQuestionarioIdByUserId(userId);
                     if (ultimo_questionario != null && ultimo_questionario.getDescrizione().equals(Stato_questionario.COMPLETATO)
                             && ultimo_questionario.getStatus() == 3 || ultimo_questionario == null) {
 
@@ -274,8 +294,7 @@ public class QuestionarioServlet extends HttpServlet {
     }
 
     private void assegnaQuestionarioDigicomp(String digicompSelect, String[] assegna_questionario_select_utente, HttpServletResponse response, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
 
         try {
             em.getTransaction().begin();
@@ -336,26 +355,33 @@ public class QuestionarioServlet extends HttpServlet {
                 Utente utente = em.find(Utente.class, userId);
 
                 if (utente != null) {
-                    Questionario ultimo_questionario = jPAUtil.findUtenteQuestionarioIdByUserId(userId);
-                    if (ultimo_questionario != null && ultimo_questionario.getDescrizione().equals(Stato_questionario.COMPLETATO)
-                            && ultimo_questionario.getStatus() == 3 || ultimo_questionario == null) {
+                    if (utente.getDisponibilità_utente().equals(Disponibilità_utente.DISPONIBILE)) {
+                        Questionario ultimo_questionario = jpaUtil.findUtenteQuestionarioIdByUserId(userId);
+                        if (ultimo_questionario != null && ultimo_questionario.getDescrizione().equals(Stato_questionario.COMPLETATO)
+                                && ultimo_questionario.getStatus() == 3 || ultimo_questionario == null) {
 
-                        Questionario questionario = new Questionario();
-                        questionario.setUtenti(List.of(utente));
-                        questionario.setDigicomp_questionario(List.of(digicomp));
-                        questionario.setStatus(0);
-                        questionario.setDescrizione(Stato_questionario.ASSEGNATO);
+                            Questionario questionario = new Questionario();
+                            questionario.setUtenti(List.of(utente));
+                            questionario.setDigicomp_questionario(List.of(digicomp));
+                            questionario.setStatus(0);
+                            questionario.setDescrizione(Stato_questionario.ASSEGNATO);
+                            utente.setDisponibilità_utente(Disponibilità_utente.NON_DISPONIBILE);
 
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-                        Date date = new Date();
-                        String formattedDate = sdf.format(date);
-                        questionario.setDataDiAssegnazione(formattedDate);
-                        questionario.setDomande(domandeSelezionate);
+                            Date date = new Date();
+                            String formattedDate = sdf.format(date);
+                            questionario.setDataDiAssegnazione(formattedDate);
+                            questionario.setDomande(domandeSelezionate);
 
-                        em.persist(questionario);
+                            em.persist(questionario);
+                        } else {
+                            if (!response.isCommitted()) {
+                                response.sendRedirect("AD_assegna_questionario.jsp?esito=KO3&codice=004");
+                                return;
+                            }
+                        }
                     } else {
                         if (!response.isCommitted()) {
-                            response.sendRedirect("AD_assegna_questionario.jsp?esito=KO3&codice=004");
+                            response.sendRedirect("AD_assegna_questionario.jsp?esito=KO5&codice=004");
                             return;
                         }
                     }
@@ -387,9 +413,8 @@ public class QuestionarioServlet extends HttpServlet {
         }
     }
 
-    private void SalvaStatoQuestionarioPresoInCarico(HttpServletRequest request, Logger logger) throws IOException {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+    private void SalvaStatoQuestionarioPresoInCarico(HttpServletRequest request, Logger logger, String userId_sessione) throws IOException {
+        EntityManager em = jpaUtil.getEm();
 
         try {
             em.getTransaction().begin();
@@ -397,19 +422,37 @@ public class QuestionarioServlet extends HttpServlet {
             HttpSession session = request.getSession();
             String userIdParam = Utils.checkAttribute(session, "userId");
             Long userId = Utils.tryParseLong(userIdParam);
-            Questionario questionario = jPAUtil.findUtenteQuestionarioIdByUserId(userId);
+            Questionario questionario = jpaUtil.findUtenteQuestionarioIdByUserId(userId);
 
             if (questionario.getStatus() == 0 && questionario.getDescrizione().equals(Stato_questionario.ASSEGNATO)) {
                 questionario.setStatus(1);
                 questionario.setDescrizione(Stato_questionario.PRESO_IN_CARICO);
                 em.merge(questionario);
                 em.getTransaction().commit();
+                InfoTrack infoTrack = new InfoTrack("CREATE",
+                        "QuestionarioServlet - Servlet - SalvaStatoQuestionarioPresoInCarico",
+                        200,
+                        "Questionario iniziato con successo per il seguente utente con id : " + userId,
+                        "Servlet chiamata dall'utente con id " + userId_sessione + ".",
+                        null,
+                        Utils.formatLocalDateTime(LocalDateTime.now()));
+
+                jpaUtil.SalvaInfoTrack(infoTrack, logger);
                 logger.info("Questionario con id " + questionario.getId() + "  è stato preso in carico con successo dall'utente con id " + userId + " in data " + sdf.format(new Date()));
             }
         } catch (Exception e) {
             if (em != null && em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
+            InfoTrack infoTrack = new InfoTrack("CREATE",
+                            "QuestionarioServlet - Servlet - SalvaStatoQuestionarioPresoInCarico",
+                            500,
+                            "Errore - Questionario non iniziato dall'utente con id " + userId_sessione + ".",
+                            "Servlet chiamata dall'utente con id " + userId_sessione + ".",
+                            Utils.estraiEccezione(e),
+                            Utils.formatLocalDateTime(LocalDateTime.now()));
+
+                    jpaUtil.SalvaInfoTrack(infoTrack, logger);
             logger.error("Non è stato possibile cambiare lo stato (PRESO_IN CARICO)" + "\n" + Utils.estraiEccezione(e));
         } finally {
             if (em != null && em.isOpen()) {
@@ -418,7 +461,7 @@ public class QuestionarioServlet extends HttpServlet {
         }
     }
 
-    private void SalvaProgressi(HttpServletRequest request, HttpServletResponse response, Logger logger) throws IOException {
+    private void SalvaProgressi(HttpServletRequest request, HttpServletResponse response, Logger logger, String userId_sessione) throws IOException {
         StringBuilder jsonInput = new StringBuilder();
         String line;
         try (BufferedReader reader = request.getReader()) {
@@ -429,7 +472,7 @@ public class QuestionarioServlet extends HttpServlet {
 
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Object> formData = objectMapper.readValue(jsonInput.toString(), Map.class);
-        
+
         String userIdParam = (String) formData.get("userId");
         Long userId = Utils.tryParseLong(userIdParam);
 
@@ -451,29 +494,46 @@ public class QuestionarioServlet extends HttpServlet {
 
             String progressJson = objectMapper.writeValueAsString(progressData);
 
-            JPAUtil jPAUtil = new JPAUtil();
-            EntityManager em = jPAUtil.getEm();
+            EntityManager em = jpaUtil.getEm();
 
             try {
                 em.getTransaction().begin();
 
                 Utente utente = em.find(Utente.class, userId);
                 if (utente != null) {
-                    Questionario questionario = jPAUtil.findUtenteQuestionarioIdByUserId(utente.getId());
+                    Questionario questionario = jpaUtil.findUtenteQuestionarioIdByUserId(utente.getId());
                     questionario.setProgressi(progressJson);
-                    jPAUtil.salvaStatoQuestionario(questionario);
+                    jpaUtil.salvaStatoQuestionario(questionario);
                     em.merge(questionario);
                 }
 
                 em.getTransaction().commit();
                 logger.info("Progressi questionario salvati con successo dall'utente con id " + userId + " in data " + sdf.format(new Date()));
+                InfoTrack infoTrack = new InfoTrack("CREATE",
+                        "QuestionarioServlet - Servlet - SalvaProgressi",
+                        200,
+                        "Progressi questionario salvati con successo per il seguente utente con id : " + userId,
+                        "Servlet chiamata dall'utente con id " + userId_sessione + ".",
+                        null,
+                        Utils.formatLocalDateTime(LocalDateTime.now()));
+
+                jpaUtil.SalvaInfoTrack(infoTrack, logger);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.sendRedirect("US_questionario.jsp?esito=OK&codice=002");
             } catch (Exception e) {
                 if (em != null && em.getTransaction().isActive()) {
                     em.getTransaction().rollback();
                 }
-                logger.error("Non è stato possibile effettuare il merge dell'utente con id " + userId + "\n" + Utils.estraiEccezione(e));
+                InfoTrack infoTrack = new InfoTrack("CREATE",
+                        "QuestionarioServlet - Servlet - SalvaProgressi",
+                        500,
+                        "Errore - Progressi questionario non salvati dall'utente con id " + userId + ".",
+                        "API chiamata dall'utente con id " + userId_sessione + ".",
+                        Utils.estraiEccezione(e),
+                        Utils.formatLocalDateTime(LocalDateTime.now()));
+
+                jpaUtil.SalvaInfoTrack(infoTrack, logger);
+                logger.error("Non è stato possibile effettuare il salvataggio del questionario dell'utente con id " + userId + "\n" + Utils.estraiEccezione(e));
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.sendRedirect("US_questionario.jsp?esito=KO&codice=002");
             } finally {
@@ -487,28 +547,26 @@ public class QuestionarioServlet extends HttpServlet {
         }
     }
 
-    public static void SalvaQuestionario(HttpServletRequest request, HttpServletResponse response, Logger logger) throws ServletException, IOException {
+    public static void SalvaQuestionario(HttpServletRequest request, HttpServletResponse response, Logger logger, String userId_sessione) throws ServletException, IOException {
         HttpSession session = request.getSession();
         String userIdParam = Utils.checkAttribute(session, "userId");
         String questionarioIdParam = Utils.checkAttribute(session, "questionarioId");
 
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
-        Utente utente = jPAUtil.findUserByUserId(userIdParam);
+        EntityManager em = jpaUtil.getEm();
+        Utente utente = jpaUtil.findUserByUserId(userIdParam);
 
         try {
             em.getTransaction().begin();
 
             logger.info("Inizio salvataggio questionario - userId: " + userIdParam + ", questionarioId: " + questionarioIdParam);
 
-            Questionario questionario = jPAUtil.findUtenteQuestionarioIdByUserId(utente.getId());
+            Questionario questionario = jpaUtil.findUtenteQuestionarioIdByUserId(utente.getId());
 
             String nome = utente.getNome();
             String cognome = utente.getCognome();
             int eta = utente.getEtà();
             String indirizzo = utente.getIndirizzo();
 
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             String formattedDate = sdf.format(new Date());
 
             Map<String, Object> informazioniGenerali = new HashMap<>();
@@ -652,6 +710,16 @@ public class QuestionarioServlet extends HttpServlet {
             questionario.setRisposte(objectMapper.writeValueAsString(risposteFinali));
             salvaStatoQuestionarioCompletato(questionario, logger);
 
+            InfoTrack infoTrack = new InfoTrack("CREATE",
+                    "QuestionarioServlet - Servlet - SalvaQuestionario",
+                    200,
+                    "Questionario con id " + questionario.getId() + " salvato con successo per il seguente utente con id : " + utente.getId(),
+                    "Servlet chiamata dall'utente con id " + userId_sessione + ".",
+                    null,
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jpaUtil.SalvaInfoTrack(infoTrack, logger);
+
             em.merge(questionario);
             em.getTransaction().commit();
 
@@ -659,6 +727,15 @@ public class QuestionarioServlet extends HttpServlet {
             if (em != null && em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
+            InfoTrack infoTrack = new InfoTrack("CREATE",
+                    "QuestionarioServlet - Servlet - SalvaQuestionario",
+                    500,
+                    "Errore - Questionario con id " + questionarioIdParam + " non salvato dall'utente con id " + utente.getId() + ".",
+                    "Servlet chiamata dall'utente con id " + userId_sessione + ".",
+                    Utils.estraiEccezione(e),
+                    Utils.formatLocalDateTime(LocalDateTime.now()));
+
+            jpaUtil.SalvaInfoTrack(infoTrack, logger);
             logger.error("Errore nel salvataggio del questionario ID: " + questionarioIdParam + "\n" + Utils.estraiEccezione(e));
         } finally {
             if (em != null && em.isOpen()) {
@@ -668,8 +745,7 @@ public class QuestionarioServlet extends HttpServlet {
     }
 
     public static Questionario salvaStatoQuestionarioCompletato(Questionario questionario, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
 
         try {
             em.getTransaction().begin();
@@ -706,7 +782,6 @@ public class QuestionarioServlet extends HttpServlet {
 
         try {
 
-            JPAUtil jPAUtil = new JPAUtil();
             int start = Utils.tryParseInt(request.getParameter("start"));
             int pageSize = Utils.tryParseInt(request.getParameter("pageSize"));
             String stato_questionario_select = request.getParameter("stato_questionario_select");
@@ -765,7 +840,7 @@ public class QuestionarioServlet extends HttpServlet {
                     jsonQuestionario.addProperty("data_di_completamento", "non ancora completato");
                 }
 
-                Utente utente = jPAUtil.findUserByUtenteQuestionario(questionario.getId());
+                Utente utente = jpaUtil.findUserByUtenteQuestionario(questionario.getId());
                 if (utente != null) {
                     jsonQuestionario.addProperty("utente", utente.getNome() + " " + utente.getCognome());
                 } else {
@@ -862,8 +937,7 @@ public class QuestionarioServlet extends HttpServlet {
                     jsonQuestionario.addProperty("data_di_completamento", "non ancora completato");
                 }
 
-                JPAUtil jPAUtil = new JPAUtil();
-                Utente utente = jPAUtil.findUserByUtenteQuestionario(questionario.getId());
+                Utente utente = jpaUtil.findUserByUtenteQuestionario(questionario.getId());
                 if (utente != null) {
                     jsonQuestionario.addProperty("utente", utente.getNome() + " " + utente.getCognome());
                 } else {
@@ -900,8 +974,7 @@ public class QuestionarioServlet extends HttpServlet {
     public static long countUtenteQuestionariUser(Long userId, String stato_questionario_select, String data_inizio,
             String data_fine, String tipo_questionario, Logger logger) {
 
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
         long totalRecords = 0;
 
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -974,8 +1047,7 @@ public class QuestionarioServlet extends HttpServlet {
 
     public static long countUtenteQuestionari(String utenteIdParam, String stato_questionario_select,
             String data_inizio, String data_fine, String tipo_questionario, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
         long totalRecords = 0;
 
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -1056,8 +1128,7 @@ public class QuestionarioServlet extends HttpServlet {
 
     public static List<Questionario> RicercaArchivi(int start, int pageSize, String stato_questionario_select,
             String data_inizio, String data_fine, String utenteIdParam, String tipo_questionario, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
         List<Questionario> resultList = new ArrayList<>();
 
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -1150,8 +1221,7 @@ public class QuestionarioServlet extends HttpServlet {
 
     public static List<Questionario> RicercaArchiviUtente(int start, int pageSize, Long userId,
             String stato_questionario_select, String data_inizio, String data_fine, String tipo_questionario, Logger logger) {
-        JPAUtil jPAUtil = new JPAUtil();
-        EntityManager em = jPAUtil.getEm();
+        EntityManager em = jpaUtil.getEm();
         List<Questionario> resultList = new ArrayList<>();
 
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");

@@ -226,6 +226,18 @@ if (esito !== null && codice !== null) {
         esitoModalButton.style.color = 'white';
         esitoModal.show();
         redirect();
+    } else if (esito === "KO5" && codice === '004') {
+        esitoModalBody.textContent = "Utente/i occupato/i ! Riprova più tardi.";
+        esitoModalBody.style.color = '#dc3545';
+        esitoModalHeader.style.background = '#dc3545';
+        esitoModalHeader.style.color = 'white';
+        esitoModalHeader.textContent = "Operazione non andata a buon fine!";
+        esitoModalButton.style.backgroundColor = '#dc3545';
+        esitoModalButton.style.color = 'white';
+        esitoModalButton.style.borderColor = '#dc3545';
+        esitoModalButton.style.color = 'white';
+        esitoModal.show();
+        redirect();
     } else if (esito === "KO" && codice === '005') {
         esitoModalBody.textContent = "Non è stato possibile creare la domanda ! Riprova più tardi.";
         esitoModalBody.style.color = '#dc3545';
